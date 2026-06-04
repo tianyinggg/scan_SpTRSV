@@ -1,0 +1,7 @@
+matrix_name,n_rows,nnz,absolute_head_rows,absolute_head_row_ratio,strict_boundary_head_rows,strict_boundary_head_row_ratio,strict_single_pred_rows,strict_single_pred_row_ratio,strict_multi_pred_rows,strict_multi_pred_row_ratio,strict_branch_rows,strict_branch_row_ratio,strict_chain_count,strict_chain_row_coverage,strict_chain_row_coverage_ratio,max_strict_chain_length,avg_strict_chain_length,strict_chain_len_ge_2,strict_chain_len_ge_4,strict_chain_len_ge_8,strict_chain_len_ge_16,strict_chain_len_ge_32,strict_chain_len_ge_64
+t01_two_short_chains_4.mtx,4,6,2,0.5,2,0.5,2,0.5,0,0.0,0,0.0,2,4,1.0,2,2.0,2,0,0,0,0,0
+t02_pure_chain_8.mtx,8,15,1,0.125,1,0.125,7,0.875,0,0.0,0,0.0,1,8,1.0,8,8.0,1,1,1,0,0,0
+t03_invalid_same_level_4.mtx,4,7,2,0.5,1,0.25,1,0.25,1,0.25,0,0.0,1,2,0.5,2,2.0,1,0,0,0,0,0
+t04_external_dep_chain_8.mtx,8,19,2,0.25,1,0.125,1,0.125,5,0.625,0,0.0,1,2,0.25,2,2.0,1,0,0,0,0,0
+t05_pure_chain_40.mtx,40,79,1,0.025,1,0.025,39,0.975,0,0.0,0,0.0,1,40,1.0,40,40.0,1,1,1,1,1,0
+矩阵名,行数,非零元数,绝对链头行数,绝对链头行占比,严格边界链头行数,严格边界链头行占比,严格单前驱行数,严格单前驱行占比,多前驱行数,多前驱行占比,严格分叉节点数,严格分叉节点占比,严格链条数,严格链覆盖节点数,严格链覆盖占比,最长严格链长度,平均严格链长度,长度至少2的严格链条数,长度至少4的严格链条数,长度至少8的严格链条数,长度至少16的严格链条数,长度至少32的严格链条数,长度至少64的严格链条数
