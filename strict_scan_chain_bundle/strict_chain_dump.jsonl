@@ -1,5 +1,0 @@
-{"matrix_name": "t01_two_short_chains_4.mtx", "strict_chains": [{"head": 0, "head_type": "absolute_head", "head_pred_count": 0, "length": 2, "nodes": [0, 1]}, {"head": 2, "head_type": "absolute_head", "head_pred_count": 0, "length": 2, "nodes": [2, 3]}]}
-{"matrix_name": "t02_pure_chain_8.mtx", "strict_chains": [{"head": 0, "head_type": "absolute_head", "head_pred_count": 0, "length": 8, "nodes": [0, 1, 2, 3, 4, 5, 6, 7]}]}
-{"matrix_name": "t03_invalid_same_level_4.mtx", "strict_chains": [{"head": 2, "head_type": "boundary_head", "head_pred_count": 2, "length": 2, "nodes": [2, 3]}]}
-{"matrix_name": "t04_external_dep_chain_8.mtx", "strict_chains": [{"head": 0, "head_type": "absolute_head", "head_pred_count": 0, "length": 2, "nodes": [0, 1]}]}
-{"matrix_name": "t05_pure_chain_40.mtx", "strict_chains": [{"head": 0, "head_type": "absolute_head", "head_pred_count": 0, "length": 40, "nodes": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39]}]}
