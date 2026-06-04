@@ -37,8 +37,14 @@ CSV_FIELDS = [
 
 FRONTIER_SAFE_CHAIN_ENABLED = False
 DEFAULT_MAX_DUMP_ROWS = 1_000_000
-SCRIPT_DIR = Path(__file__).resolve().parent
-DEFAULT_BIGTEST_OUT = SCRIPT_DIR / "bigtest_end.csv"
+PACKAGE_DIR = Path(__file__).resolve().parent
+REPO_ROOT = PACKAGE_DIR.parents[1]
+DATASETS_DIR = REPO_ROOT / "datasets"
+RESULTS_DIR = REPO_ROOT / "results"
+EXPERIMENTS_DIR = REPO_ROOT / "experiments"
+DEFAULT_BIGTEST_OUT = RESULTS_DIR / "bigtest_end.csv"
+DEFAULT_SMALL_TEST_INPUT = DATASETS_DIR / "datasets1"
+DEFAULT_SMALL_TEST_OUT = EXPERIMENTS_DIR / "scan_chain_stats_t01_t05_test.csv"
 
 CSV_FIELD_LABELS = {
     "matrix_name": "矩阵名",
@@ -493,15 +499,21 @@ def resolve_input_path(input_arg: str):
     if input_path.exists():
         return input_path
 
-    script_relative = SCRIPT_DIR / input_path
-    if script_relative.exists():
-        return script_relative
+    repo_relative = REPO_ROOT / input_path
+    if repo_relative.exists():
+        return repo_relative
+
+    datasets_relative = DATASETS_DIR / input_path
+    if datasets_relative.exists():
+        return datasets_relative
 
     if input_path.suffix != ".mtx":
         name = input_path.name
         candidates = [
-            SCRIPT_DIR / name / f"{name}.mtx",
-            SCRIPT_DIR / f"{name}.mtx",
+            DATASETS_DIR / name / f"{name}.mtx",
+            DATASETS_DIR / f"{name}.mtx",
+            REPO_ROOT / name / f"{name}.mtx",
+            REPO_ROOT / f"{name}.mtx",
             Path.cwd() / name / f"{name}.mtx",
             Path.cwd() / f"{name}.mtx",
         ]
@@ -510,6 +522,16 @@ def resolve_input_path(input_arg: str):
                 return candidate
 
     return input_path
+
+
+def resolve_repo_relative_path(path_arg: str | None):
+    if path_arg is None:
+        return None
+
+    path = Path(path_arg).expanduser()
+    if path.is_absolute():
+        return path
+    return REPO_ROOT / path
 
 
 def is_label_row(row):
@@ -562,13 +584,22 @@ def main():
         default="mawi_201512020030",
         help=(
             "Input .mtx file, directory, or matrix name. A bare name like "
-            "'mawi_201512020030' resolves to mawi_201512020030/mawi_201512020030.mtx"
+            "'mawi_201512020030' resolves to "
+            "datasets/mawi_201512020030/mawi_201512020030.mtx"
         ),
     )
     parser.add_argument(
         "--out",
         default=str(DEFAULT_BIGTEST_OUT),
         help=f"Output CSV path (default: {DEFAULT_BIGTEST_OUT})",
+    )
+    parser.add_argument(
+        "--small-test",
+        action="store_true",
+        help=(
+            "Use datasets/datasets1 and write to "
+            "experiments/scan_chain_stats_t01_t05_test.csv"
+        ),
     )
     parser.add_argument(
         "--dump-chains",
@@ -597,9 +628,13 @@ def main():
     )
     args = parser.parse_args()
 
-    input_path = resolve_input_path(args.input)
-    output_path = Path(args.out)
-    dump_chains_out_path = Path(args.dump_chains_out) if args.dump_chains_out else None
+    if args.small_test:
+        input_path = DEFAULT_SMALL_TEST_INPUT
+        output_path = DEFAULT_SMALL_TEST_OUT
+    else:
+        input_path = resolve_input_path(args.input)
+        output_path = resolve_repo_relative_path(args.out)
+    dump_chains_out_path = resolve_repo_relative_path(args.dump_chains_out)
 
     if not input_path.exists():
         raise FileNotFoundError(f"Input path not found: {input_path}")

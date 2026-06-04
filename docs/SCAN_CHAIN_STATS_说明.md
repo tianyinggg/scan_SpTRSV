@@ -327,9 +327,9 @@
 示例命令：
 
 ```bash
-python analyze_scan_chains.py datasets --dump-chains
+python3 scripts/analyze_scan_chains.py datasets/datasets1 --dump-chains
 ```
 
 ```bash
-python analyze_scan_chains.py datasets --dump-chains --dump-chains-out strict_chain_dump.jsonl
+python3 scripts/analyze_scan_chains.py datasets/datasets1 --dump-chains --dump-chains-out dump/strict_chain_dump.jsonl
 ```
