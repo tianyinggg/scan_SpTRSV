@@ -43,8 +43,10 @@ DATASETS_DIR = REPO_ROOT / "datasets"
 RESULTS_DIR = REPO_ROOT / "results"
 EXPERIMENTS_DIR = REPO_ROOT / "experiments"
 DEFAULT_BIGTEST_OUT = RESULTS_DIR / "bigtest_end.csv"
+DEFAULT_SPCG_FACTOR_OUT = RESULTS_DIR / "spcg_factor_chain_stats.csv"
 DEFAULT_SMALL_TEST_INPUT = DATASETS_DIR / "datasets1"
 DEFAULT_SMALL_TEST_OUT = EXPERIMENTS_DIR / "scan_chain_stats_t01_t05_test.csv"
+DEFAULT_FACTOR_DIR = REPO_ROOT / "dump" / "spcg_factors"
 
 CSV_FIELD_LABELS = {
     "matrix_name": "矩阵名",
@@ -443,21 +445,33 @@ def matrix_name_for_path(path: Path):
     return path.stem
 
 
-def analyze_matrix(
-    path: Path,
-    triangle="lower",
+def spcg_factor_matrix_name(
+    source_path: Path,
+    method: str,
+    fill_factor: float,
+    drop_tol: float | None,
+    sparsify_percentage: float,
+):
+    drop_tag = "default" if drop_tol is None else f"{drop_tol:g}"
+    return (
+        f"spcg_{method}_l_{source_path.stem}"
+        f"_fill{fill_factor:g}_drop{drop_tag}_sp{sparsify_percentage:g}"
+    )
+
+
+def analyze_dependencies(
+    deps: StrictLowerDependencies,
+    matrix_name: str,
     dump_chains=False,
     max_dump_rows=DEFAULT_MAX_DUMP_ROWS,
 ):
-    deps = read_strict_lower_dependencies_mtx(path, triangle=triangle)
-
     n_rows = int(deps.n_rows)
     strict_lower_nnz = int(deps.strict_lower_nnz)
     nnz = strict_lower_nnz + n_rows
 
     if dump_chains and n_rows > max_dump_rows:
         raise ValueError(
-            f"--dump-chains is intended for small matrices; {path.name} has "
+            f"--dump-chains is intended for small matrices; {matrix_name} has "
             f"{n_rows} rows, limit is {max_dump_rows}"
         )
 
@@ -472,7 +486,7 @@ def analyze_matrix(
     )
 
     result = {
-        "matrix_name": matrix_name_for_path(path),
+        "matrix_name": matrix_name,
         "n_rows": n_rows,
         "strict_lower_nnz": strict_lower_nnz,
         "nnz": nnz,
@@ -486,6 +500,135 @@ def analyze_matrix(
         result["frontier_safe_chain_analysis"] = analyze_frontier_safe_chains()
 
     return result
+
+
+def analyze_matrix(
+    path: Path,
+    triangle="lower",
+    dump_chains=False,
+    max_dump_rows=DEFAULT_MAX_DUMP_ROWS,
+):
+    deps = read_strict_lower_dependencies_mtx(path, triangle=triangle)
+    return analyze_dependencies(
+        deps,
+        matrix_name_for_path(path),
+        dump_chains=dump_chains,
+        max_dump_rows=max_dump_rows,
+    )
+
+
+def _require_scipy_for_spcg_factors():
+    try:
+        import scipy.io as scipy_io
+        import scipy.sparse as scipy_sparse
+        import scipy.sparse.linalg as scipy_linalg
+    except ImportError as exc:
+        raise RuntimeError(
+            "SPCG factor generation requires scipy. Install scipy or use "
+            "--source factor-l with an existing L factor .mtx file."
+        ) from exc
+
+    return scipy_io, scipy_sparse, scipy_linalg
+
+
+def _spcg_sparsify_matrix(matrix, percentage: float):
+    if percentage <= 0:
+        return matrix
+
+    matrix = matrix.tocoo(copy=True)
+    if matrix.nnz == 0:
+        return matrix.tocsr()
+
+    threshold_index = int(len(matrix.data) * percentage)
+    threshold_index = min(max(threshold_index, 0), len(matrix.data) - 1)
+    threshold = np.sort(np.abs(matrix.data))[threshold_index]
+
+    keep = (matrix.row == matrix.col) | (np.abs(matrix.data) > threshold)
+    return type(matrix)((matrix.data[keep], (matrix.row[keep], matrix.col[keep])), shape=matrix.shape).tocsr()
+
+
+def generate_spcg_lu_factors(
+    matrix_path: Path,
+    factor_dir: Path,
+    method: str,
+    fill_factor: float,
+    drop_tol: float | None,
+    sparsify_percentage: float,
+):
+    """Generate SPCG-style SuperLU L/U factors and export them as Matrix Market."""
+    scipy_io, scipy_sparse, scipy_linalg = _require_scipy_for_spcg_factors()
+
+    matrix = scipy_io.mmread(str(matrix_path))
+    if not hasattr(matrix, "tocsc"):
+        matrix = scipy_sparse.coo_matrix(matrix)
+
+    if matrix.shape[0] != matrix.shape[1]:
+        raise ValueError(f"Matrix is not square: {matrix_path.name}, shape={matrix.shape}")
+
+    matrix = _spcg_sparsify_matrix(matrix, sparsify_percentage)
+    matrix_csc = matrix.tocsc()
+
+    if method == "splu":
+        factors = scipy_linalg.splu(
+            matrix_csc,
+            permc_spec="NATURAL",
+            diag_pivot_thresh=1e-15,
+        )
+    elif method == "spilu":
+        kwargs = {
+            "fill_factor": fill_factor,
+            "permc_spec": "NATURAL",
+            "diag_pivot_thresh": 1e-15,
+        }
+        if drop_tol is not None:
+            kwargs["drop_tol"] = drop_tol
+        factors = scipy_linalg.spilu(matrix_csc, **kwargs)
+    else:
+        raise ValueError(f"Unsupported SPCG factorization method: {method}")
+
+    matrix_name = spcg_factor_matrix_name(
+        matrix_path,
+        method=method,
+        fill_factor=fill_factor,
+        drop_tol=drop_tol,
+        sparsify_percentage=sparsify_percentage,
+    )
+
+    factor_dir.mkdir(parents=True, exist_ok=True)
+    l_path = factor_dir / f"{matrix_name}.mtx"
+    u_path = factor_dir / f"{matrix_name.replace('_l_', '_u_', 1)}.mtx"
+    scipy_io.mmwrite(str(l_path), factors.L)
+    scipy_io.mmwrite(str(u_path), factors.U)
+
+    return l_path, u_path, matrix_name
+
+
+def analyze_spcg_factor_l(
+    matrix_path: Path,
+    factor_dir: Path,
+    method: str,
+    fill_factor: float,
+    drop_tol: float | None,
+    sparsify_percentage: float,
+    triangle="lower",
+    dump_chains=False,
+    max_dump_rows=DEFAULT_MAX_DUMP_ROWS,
+):
+    l_path, _, matrix_name = generate_spcg_lu_factors(
+        matrix_path=matrix_path,
+        factor_dir=factor_dir,
+        method=method,
+        fill_factor=fill_factor,
+        drop_tol=drop_tol,
+        sparsify_percentage=sparsify_percentage,
+    )
+    deps = read_strict_lower_dependencies_mtx(l_path, triangle=triangle)
+    return analyze_dependencies(
+        deps,
+        matrix_name,
+        dump_chains=dump_chains,
+        max_dump_rows=max_dump_rows,
+    )
 
 
 def collect_mtx_files(input_path: Path):
@@ -590,8 +733,11 @@ def main():
     )
     parser.add_argument(
         "--out",
-        default=str(DEFAULT_BIGTEST_OUT),
-        help=f"Output CSV path (default: {DEFAULT_BIGTEST_OUT})",
+        default=None,
+        help=(
+            f"Output CSV path. Default is {DEFAULT_BIGTEST_OUT} for matrix-lower, "
+            f"or {DEFAULT_SPCG_FACTOR_OUT} for factor-l and spcg-ilu-l."
+        ),
     )
     parser.add_argument(
         "--small-test",
@@ -626,15 +772,70 @@ def main():
         choices=["lower"],
         help="Triangle type after preprocessing (currently only lower is supported)",
     )
+    parser.add_argument(
+        "--source",
+        default="matrix-lower",
+        choices=["matrix-lower", "factor-l", "spcg-ilu-l"],
+        help=(
+            "Data source. matrix-lower streams an original matrix and extracts "
+            "strict lower dependencies; factor-l analyzes an existing L factor; "
+            "spcg-ilu-l generates SPCG-style SuperLU L/U factors and analyzes L."
+        ),
+    )
+    parser.add_argument(
+        "--factor-dir",
+        default=str(DEFAULT_FACTOR_DIR),
+        help=f"Directory for generated SPCG-style L/U factors (default: {DEFAULT_FACTOR_DIR})",
+    )
+    parser.add_argument(
+        "--spcg-method",
+        default="spilu",
+        choices=["spilu", "splu"],
+        help="SPCG-style factorization method used by --source spcg-ilu-l",
+    )
+    parser.add_argument(
+        "--fill-factor",
+        type=float,
+        default=10.0,
+        help="SuperLU fill_factor for --spcg-method spilu (default: 10.0)",
+    )
+    parser.add_argument(
+        "--drop-tol",
+        type=float,
+        default=None,
+        help="Optional SuperLU drop_tol for --spcg-method spilu",
+    )
+    parser.add_argument(
+        "--spcg-sparsify-percentage",
+        type=float,
+        default=0.0,
+        help=(
+            "Optional SPCG-style value-threshold sparsification percentage before "
+            "factorization, for --source spcg-ilu-l (default: 0.0)"
+        ),
+    )
     args = parser.parse_args()
+
+    if args.spcg_sparsify_percentage < 0 or args.spcg_sparsify_percentage >= 1:
+        raise ValueError("--spcg-sparsify-percentage must be in [0, 1)")
 
     if args.small_test:
         input_path = DEFAULT_SMALL_TEST_INPUT
-        output_path = DEFAULT_SMALL_TEST_OUT
+        output_path = (
+            resolve_repo_relative_path(args.out)
+            if args.out is not None
+            else DEFAULT_SMALL_TEST_OUT
+        )
     else:
         input_path = resolve_input_path(args.input)
-        output_path = resolve_repo_relative_path(args.out)
+        if args.out is not None:
+            output_path = resolve_repo_relative_path(args.out)
+        elif args.source in {"factor-l", "spcg-ilu-l"}:
+            output_path = DEFAULT_SPCG_FACTOR_OUT
+        else:
+            output_path = DEFAULT_BIGTEST_OUT
     dump_chains_out_path = resolve_repo_relative_path(args.dump_chains_out)
+    factor_dir = resolve_repo_relative_path(args.factor_dir)
 
     if not input_path.exists():
         raise FileNotFoundError(f"Input path not found: {input_path}")
@@ -647,12 +848,25 @@ def main():
     dump_lines = []
     for mtx in mtx_files:
         try:
-            res = analyze_matrix(
-                mtx,
-                triangle=args.triangle,
-                dump_chains=args.dump_chains,
-                max_dump_rows=args.dump_chains_max_rows,
-            )
+            if args.source in {"matrix-lower", "factor-l"}:
+                res = analyze_matrix(
+                    mtx,
+                    triangle=args.triangle,
+                    dump_chains=args.dump_chains,
+                    max_dump_rows=args.dump_chains_max_rows,
+                )
+            else:
+                res = analyze_spcg_factor_l(
+                    mtx,
+                    factor_dir=factor_dir,
+                    method=args.spcg_method,
+                    fill_factor=args.fill_factor,
+                    drop_tol=args.drop_tol,
+                    sparsify_percentage=args.spcg_sparsify_percentage,
+                    triangle=args.triangle,
+                    dump_chains=args.dump_chains,
+                    max_dump_rows=args.dump_chains_max_rows,
+                )
             results.append(res)
             if args.dump_chains:
                 chain_dump = {
