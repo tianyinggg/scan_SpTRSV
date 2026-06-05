@@ -1,67 +1,71 @@
 # scan_SpTRSV
 
-`scan_SpTRSV` analyzes strict single-predecessor scan chains for sparse triangular dependency structures. It does not reimplement the `2020-lu-sptrsv` level-set solver; it extracts dependency statistics from Matrix Market inputs with a streaming reader.
+`scan_SpTRSV` analyzes scan opportunities in sparse triangular dependency
+structures. The project separates data sources from analysis methods.
 
-`scan_SpTRSV` 用于分析稀疏三角依赖结构中的严格单前驱 scan 链。它不是 `2020-lu-sptrsv` 的 level-set 求解器复刻版，而是通过流式 Matrix Market 读取器抽取依赖统计参数。
+`scan_SpTRSV` 用于分析稀疏三角依赖结构中适合做 scan 的链。当前工程已经把“数据来源”和“统计方法”彻底分开：
 
-## Layout
+- Data source: original matrices or generated SPCG-style `L/U` factors
+- 数据来源：原始矩阵，或由 SPCG 风格因子化生成的真实 `L/U` 因子
+- Analysis method: strict single-predecessor chains or frontier-safe chains
+- 统计方法：严格单前驱链，或 frontier-safe 链
+
+## Directory Layout
 
 ## 目录结构
 
 ```text
 scan_SpTRSV/
-├── README.md
-├── src/
-├── scripts/
+├── data/
+│   ├── matrices/
+│   │   ├── regression/      # small correctness matrices
+│   │   └── real/            # large real Matrix Market inputs
+│   └── factors/
+│       └── spcg/            # generated SPCG-style L/U factors
 ├── results/
-├── figures/
-├── docs/
-├── experiments/
-├── dump/
-├── datasets/
-└── .gitignore
+│   ├── strict/              # strict-chain result tables
+│   ├── frontier_safe/       # strict + frontier-safe result tables
+│   ├── regression/          # small regression outputs
+│   └── definitions/         # field definitions
+├── src/scan_sptrsv/         # core implementation
+├── scripts/                 # runnable entry points
+├── docs/                    # notes and method docs
+├── figures/                 # plots and exported figures
+└── legacy/                  # old outputs and old bundles, not active paths
 ```
 
-- `src/scan_sptrsv/`: core implementation
-- `src/scan_sptrsv/`: 核心实现
-- `scripts/`: runnable entry points
-- `scripts/`: 可直接运行的脚本入口
-- `results/`: stable result tables
-- `results/`: 稳定保存的结果表
-- `figures/`: exported figures for reports or papers
-- `figures/`: 用于论文或报告的图表
-- `docs/`: notes, metric definitions, drafts
-- `docs/`: 说明文档、指标定义、草稿和笔记
-- `experiments/`: temporary or small-scale experiment artifacts
-- `experiments/`: 临时实验或小规模回归结果
-- `dump/`: intermediate dumps and debug data
-- `dump/`: 中间 dump 和调试数据
-- `datasets/`: Matrix Market inputs
-- `datasets/`: Matrix Market 输入数据
+中文说明：
 
-## Main Entry Point
+- `data/matrices/regression/`：小矩阵测试集，用于验证统计逻辑是否正确。
+- `data/matrices/real/`：真实大矩阵输入，例如 `tmt_sym`、`mawi_201512020030`。
+- `data/factors/spcg/`：由 SPCG 风格 `spilu/splu` 生成的真实三角因子，按矩阵名分目录保存。
+- `results/strict/`：严格单前驱链统计结果。
+- `results/frontier_safe/`：frontier-safe 统计结果，会同时包含 strict 字段和 frontier-safe 字段。
+- `results/regression/`：小测试集输出。
+- `results/definitions/`：字段定义和说明。
+- `legacy/`：旧结果和旧 bundle，仅作历史保留，不再作为默认运行路径。
 
-## 主入口
+## Data Sources
 
-Run the analyzer through:
+## 数据来源
 
-运行方式：
+### `matrix-lower`
+
+`matrix-lower` reads an original matrix and extracts strict lower-triangular
+dependencies directly.
+
+`matrix-lower` 直接读取原始矩阵，并从中抽取严格下三角依赖。这是“原矩阵直接拆下三角”的路径。
 
 ```bash
-python3 scripts/analyze_scan_chains.py mawi_201512020030
+python3 scripts/analyze_scan_chains.py tmt_sym --source matrix-lower
 ```
 
-The default source is `matrix-lower`: the analyzer streams the original Matrix
-Market input and extracts strict lower-triangular dependencies directly.
-
-默认数据源是 `matrix-lower`：程序流式读取原始 Matrix Market 矩阵，并直接抽取严格下三角依赖。
-
-A bare matrix name resolves to:
+Bare matrix names resolve to:
 
 裸矩阵名会解析到：
 
 ```text
-datasets/<name>/<name>.mtx
+data/matrices/real/<name>/<name>.mtx
 ```
 
 Default output:
@@ -69,74 +73,34 @@ Default output:
 默认输出：
 
 ```text
-results/bigtest_end.csv
+results/strict/matrix_lower.csv
 ```
 
-The output file is updated by `matrix_name`: new matrices are appended; reruns replace the existing row for the same matrix.
+### `spcg-ilu-l`
 
-结果文件按 `matrix_name` 做更新：新矩阵追加新行，重跑同名矩阵会替换对应结果行。
+`spcg-ilu-l` generates SPCG-style SuperLU `L/U` factors, stores them under
+`data/factors/spcg/<matrix>/`, and analyzes the generated `L`.
 
-For small regression tests, run:
-
-小矩阵回归测试运行方式：
+`spcg-ilu-l` 会先对原矩阵做 SPCG 风格的 SuperLU 因子化，生成真实 `L/U`，保存到 `data/factors/spcg/<matrix>/`，然后只分析生成出来的真实 `L` 因子。
 
 ```bash
-python3 scripts/analyze_scan_chains.py --small-test
+python3 scripts/analyze_scan_chains.py tmt_sym --source spcg-ilu-l
 ```
 
-Small-test output:
+Default output:
 
-小矩阵测试输出：
+默认输出：
 
 ```text
-experiments/scan_chain_stats_t01_t05_test.csv
-```
-
-This file uses the same `matrix_name` update rule as `results/bigtest_end.csv`.
-
-该文件使用和 `results/bigtest_end.csv` 相同的按 `matrix_name` 更新规则。
-
-## SPCG-Style Factor Inputs
-
-## SPCG 风格真实三角因子输入
-
-`scan_SpTRSV` also supports a parallel data path based on SPCG-style real
-triangular factors. This path does not replace `matrix-lower`; it generates or
-reads an actual `L` factor and then feeds that `L` into the same strict-chain
-statistics.
-
-`scan_SpTRSV` 也支持一条并行的 SPCG 风格真实三角因子路径。它不会替代 `matrix-lower`；这条路径会生成或读取真实 `L` 因子，再把该 `L` 送入同一套严格链统计逻辑。
-
-Generate SuperLU `L/U` factors with SPCG-like settings and analyze `L`:
-
-使用接近 SPCG 的 SuperLU 设置生成 `L/U` 因子并分析 `L`：
-
-```bash
-python3 scripts/analyze_scan_chains.py kkt_power --source spcg-ilu-l
-```
-
-Default generated factors:
-
-默认生成的因子位置：
-
-```text
-dump/spcg_factors/
-```
-
-Default output for this source:
-
-这条路径的默认输出：
-
-```text
-results/spcg_factor_chain_stats.csv
+results/strict/spcg_factor_l.csv
 ```
 
 Useful options:
 
-常用选项：
+常用参数：
 
 ```bash
-python3 scripts/analyze_scan_chains.py kkt_power \
+python3 scripts/analyze_scan_chains.py tmt_sym \
   --source spcg-ilu-l \
   --spcg-method spilu \
   --fill-factor 20 \
@@ -144,31 +108,143 @@ python3 scripts/analyze_scan_chains.py kkt_power \
   --spcg-sparsify-percentage 0.05
 ```
 
-Analyze an existing lower factor `.mtx` directly:
+### `factor-l`
 
-直接分析已有下三角因子 `.mtx`：
+`factor-l` analyzes an existing lower factor `.mtx` directly.
+
+`factor-l` 直接分析已有的下三角 `L.mtx` 文件。如果传入的是一个因子目录，程序会只筛选 `L` 因子，避免把同目录里的 `U` 当成下三角矩阵分析。
 
 ```bash
-python3 scripts/analyze_scan_chains.py dump/spcg_factors/spcg_spilu_l_kkt_power_fill10_dropdefault_sp0.mtx \
+python3 scripts/analyze_scan_chains.py \
+  data/factors/spcg/tmt_sym/spcg_spilu_l_tmt_sym_fill10_dropdefault_sp0.mtx \
   --source factor-l
 ```
 
-## Current Outputs
+## Analysis Methods
 
-## 当前输出
+## 统计方法
 
-- `results/bigtest_end.csv`: aggregated large-matrix statistics
-- `results/bigtest_end.csv`: 汇总后的大矩阵统计结果
-- `results/bigtest_end_parameter_definitions.csv`: field source, meaning, calculation description, and formula
-- `results/bigtest_end_parameter_definitions.csv`: 每个字段的来源、意义、计算描述与公式
+### Strict Chains
+
+Strict chains use the conservative rule:
+
+严格链使用最保守的规则：
+
+```text
+pred_count[row] == 1
+```
+
+That means a row can be part of a strict scan chain only when it has exactly one
+lower-triangular predecessor.
+
+也就是说，某一行只有在严格下三角中恰好只有一个前驱时，才可以进入 strict scan 链。这种口径解释简单，但通常覆盖率偏低。
+
+Strict mode is the default method and writes only strict-chain fields.
+
+strict 模式是默认统计方法，只输出 strict 相关字段。
+
+### Frontier-Safe Chains
+
+Frontier-safe chains are built in two stages. First, each row picks its unique
+deepest predecessor as a candidate scan parent. Rows with tied deepest
+predecessors are counted as unresolved. Second, every candidate chain is split
+by the chain-head boundary-known rule: when extending `current -> child`, every
+non-main predecessor of `child` except `current` must be smaller than the
+current chain head. Otherwise the chain is cut before `child`, and `child`
+becomes a new chain head.
+
+frontier-safe 链现在分两步。第一步，每一行用“唯一最深前驱”生成候选 scan parent；如果存在多个并列最深前驱，则该行记为 unresolved。第二步，对候选链按“链头边界已知”规则切链：从 `current` 扩展到 `child` 时，`child` 除 `current` 之外的所有非主依赖都必须小于当前链头 `head`；否则在 `child` 前切链，并让 `child` 作为新链头继续。
+
+```bash
+python3 scripts/analyze_scan_chains.py \
+  data/factors/spcg/tmt_sym/spcg_spilu_l_tmt_sym_fill10_dropdefault_sp0.mtx \
+  --source factor-l \
+  --frontier-safe
+```
+
+Default output:
+
+默认输出：
+
+```text
+results/frontier_safe/spcg_factor_l.csv
+```
+
+当前真实 `L` 因子 `tmt_sym` 的结果：
+
+```text
+strict coverage:               2.70%
+frontier-safe eligible rows:   96.56%
+frontier-safe boundary cuts:   307787
+frontier-safe coverage:        92.64%
+max frontier-safe chain length: 61
+```
+
+## Regression
+
+## 回归测试
+
+Small regression matrices live in:
+
+小测试矩阵位置：
+
+```text
+data/matrices/regression/
+```
+
+Run strict regression:
+
+运行 strict 小测试：
+
+```bash
+python3 scripts/analyze_scan_chains.py --small-test
+```
+
+Run frontier-safe regression:
+
+运行 frontier-safe 小测试：
+
+```bash
+python3 scripts/analyze_scan_chains.py --small-test --frontier-safe
+```
+
+Regression outputs:
+
+回归测试输出：
+
+```text
+results/regression/strict_small_latest.csv
+results/regression/frontier_safe_small_latest.csv
+```
+
+## Current Result Files
+
+## 当前主要结果文件
+
+```text
+results/strict/matrix_lower.csv
+results/strict/spcg_factor_l.csv
+results/frontier_safe/matrix_lower.csv
+results/frontier_safe/spcg_factor_l.csv
+results/definitions/strict_fields.csv
+results/definitions/frontier_safe_fields.csv
+```
+
+中文说明：
+
+- `results/strict/matrix_lower.csv`：原矩阵直接抽下三角后的 strict 链统计。
+- `results/strict/spcg_factor_l.csv`：真实 SPCG `L` 因子的 strict 链统计。
+- `results/frontier_safe/matrix_lower.csv`：原矩阵下三角的 strict + frontier-safe 统计。
+- `results/frontier_safe/spcg_factor_l.csv`：真实 SPCG `L` 因子的 strict + frontier-safe 统计。
+- `results/definitions/strict_fields.csv`：strict 字段定义。
+- `results/definitions/frontier_safe_fields.csv`：frontier-safe 追加字段定义。
 
 ## Notes
 
-## 说明
+## 注意事项
 
-- Large `.mtx` files live under `datasets/`
-- 大矩阵 `.mtx` 文件放在 `datasets/`
-- Dump files should go under `dump/`
-- 中间 dump 文件放在 `dump/`
-- Small regression artifacts should go under `experiments/`
-- 小规模回归结果放在 `experiments/`
+Large `.mtx` files and generated factors are intentionally ignored by git. The
+directory structure is kept with `.gitkeep` files, while result CSVs are kept in
+`results/`.
+
+大矩阵 `.mtx` 和生成的真实 `L/U` 因子默认不进入 git，避免提交超大文件。目录结构通过 `.gitkeep` 保留，统计结果 CSV 保存在 `results/` 下。

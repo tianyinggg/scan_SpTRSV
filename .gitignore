@@ -5,10 +5,7 @@ __pycache__/
 *.pyc
 *.log
 src/**/__pycache__/
-dump/*
-!dump/.gitkeep
-datasets/*
-!datasets/.gitkeep
-!datasets/README.md
+data/matrices/**/*.mtx
+data/factors/**/*.mtx
 results/*_tmp*.csv
 results/*.bak.csv

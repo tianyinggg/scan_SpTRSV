@@ -1,6 +1,6 @@
 # 严格单前驱链统计说明
 
-本文档对应脚本 `analyze_scan_chains.py`。当前版本默认只输出最保守的“严格单前驱链”统计；“前沿安全链”分析入口已预留，但暂未启用，不参与当前 CSV 和调试输出。
+本文档对应脚本 `analyze_scan_chains.py`。默认输出最保守的“严格单前驱链”统计；如果启用 `--frontier-safe`，脚本会在严格链字段后追加 frontier-safe 链统计字段。
 
 ## 1. 输入定义
 
@@ -162,18 +162,36 @@
 
 后续重新运行脚本时，会继续默认输出这种格式。
 
-## 8. 预留的前沿安全链入口
+## 8. Frontier-Safe 两阶段链规则
 
-脚本内部已经预留与严格链并行的第二条分析入口，用于后续实现“带外部已就绪依赖的前沿安全链”。
+脚本内部已经实现与严格链并行的第二条分析入口，用于统计“带外部已就绪依赖的 frontier-safe 链”。
 
 当前状态：
 
-- 只保留函数入口与占位返回
-- 默认关闭
-- 不写入当前 CSV 字段
+- 默认关闭，需要显式传入 `--frontier-safe`
+- 开启后追加 frontier-safe CSV 字段
 - 不影响严格链统计结果
 
-这样做的目的是先把严格链口径稳定下来，再单独验证安全链的定义、边界和输出字段。
+frontier-safe 现在不是“唯一最深前驱直接计入链”，而是两阶段规则：
+
+1. 对每一行选择唯一最深前驱作为候选 scan parent；如果存在多个并列最深前驱，该行记为 unresolved。
+2. 沿候选 parent 边生成候选链，再按链头边界已知规则切链。
+
+切链规则：
+
+从当前链头 `head` 开始，候选链尝试从 `current` 扩展到 `child`。此时 `current` 是 `child` 的主依赖。`child` 除 `current` 之外的所有非主依赖 `pred` 都必须满足：
+
+`pred < head`
+
+如果存在任意非主依赖 `pred >= head`，说明这个依赖不能被视为当前链头之前已经可用，于是在 `child` 前切链，并让 `child` 作为新的 `boundary_cut_head` 继续向后扫描。
+
+实现位置：
+
+- `build_frontier_safe_parent`：生成唯一最深前驱候选 parent 边
+- `_can_extend_frontier_safe_chain`：检查 `non_main_pred < chain_head`
+- `analyze_frontier_safe_chains_from_graph`：沿候选边抽链并动态切链
+
+## 9. CSV 输出字段说明
 
 ### `matrix_name`
 
@@ -277,7 +295,83 @@
 
 长度 `>= 64` 的严格链条数。
 
-## 8. 这版统计回答的问题
+### `frontier_safe_max_level`
+
+按严格下三角依赖计算出的最大依赖层级，用于生成唯一最深前驱候选 parent。
+
+### `frontier_safe_eligible_rows`
+
+成功找到唯一最深前驱的行数。这是候选 parent 口径，不代表最终都能形成长链。
+
+### `frontier_safe_eligible_row_ratio`
+
+`frontier_safe_eligible_rows / n_rows`
+
+### `frontier_safe_invalid_multi_deepest_rows`
+
+存在多个并列最深前驱的行数。这些行无法唯一选择主依赖，因此不生成 frontier-safe 候选 parent。
+
+### `frontier_safe_invalid_multi_deepest_row_ratio`
+
+`frontier_safe_invalid_multi_deepest_rows / n_rows`
+
+### `frontier_safe_branch_rows`
+
+候选 parent 反向图中拥有多个候选子节点的节点数。frontier-safe 链不会穿过候选分叉。
+
+### `frontier_safe_branch_row_ratio`
+
+`frontier_safe_branch_rows / n_rows`
+
+### `frontier_safe_boundary_cut_rows`
+
+候选链中因为违反链头边界已知规则而发生的切链次数。每次切链都发生在某个 `child` 前，且该 `child` 会作为新的 `boundary_cut_head` 继续。
+
+### `frontier_safe_chain_count`
+
+经过候选 parent 和边界切链后，链长 `>= 2` 的 frontier-safe 链段数量。
+
+### `frontier_safe_chain_row_coverage`
+
+所有保留 frontier-safe 链段的链长之和，链长按节点数计并包含链头。
+
+### `frontier_safe_chain_row_coverage_ratio`
+
+`frontier_safe_chain_row_coverage / n_rows`
+
+### `max_frontier_safe_chain_length`
+
+所有保留 frontier-safe 链段中的最长链长度。新规则下该值会受边界切链明显约束。
+
+### `avg_frontier_safe_chain_length`
+
+frontier-safe 链平均长度。
+
+### `frontier_safe_chain_len_ge_2`
+
+长度 `>= 2` 的 frontier-safe 链条数。
+
+### `frontier_safe_chain_len_ge_4`
+
+长度 `>= 4` 的 frontier-safe 链条数。
+
+### `frontier_safe_chain_len_ge_8`
+
+长度 `>= 8` 的 frontier-safe 链条数。
+
+### `frontier_safe_chain_len_ge_16`
+
+长度 `>= 16` 的 frontier-safe 链条数。
+
+### `frontier_safe_chain_len_ge_32`
+
+长度 `>= 32` 的 frontier-safe 链条数。
+
+### `frontier_safe_chain_len_ge_64`
+
+长度 `>= 64` 的 frontier-safe 链条数。
+
+## 10. 这版统计回答的问题
 
 这版最小实现回答的是：
 
@@ -285,30 +379,35 @@
 - 有多少行可以作为严格单前驱链的边界链头？
 - 这些以边界输入为起点的严格单前驱链能有多长？
 - 在哪里会因为严格分叉而截断？
+- 有多少行可以唯一选择最深前驱作为 frontier-safe 候选 parent？
+- 候选 frontier-safe 链中有多少次因为链头边界不可保证而被切断？
+- 切链之后的 frontier-safe 链覆盖率和最长链长度是多少？
 
-## 9. 这版的优缺点
+## 11. 这版的优缺点
 
 优点：
 
 - 区分了“绝对链头”和“严格链边界链头”
 - 仍然不依赖求解时序模拟
 - 逻辑严格，容易解释
+- frontier-safe 不再只凭唯一最深前驱放大覆盖率，而是显式检查链头边界
 
 缺点：
 
 - 统计仍然偏保守
 - 分叉点本身不会穿过
-- 多前驱但实际可 scan 的情况仍会被漏掉
+- 多前驱但实际可 scan 的情况仍可能被漏掉
+- 当前没有模拟具体 GPU 调度，只统计结构上可解释的候选 scan 链
 
-后续如果要做第二层“前沿安全链”，可以在这个版本之上继续扩展。
+如果需要更激进的 scan 口径，可以在 frontier-safe 结果之上继续扩展。
 
-## 10. 调试输出
+## 12. 调试输出
 
 脚本支持：
 
 `--dump-chains`
 
-开启后，会对每个矩阵额外打印一行 JSON，包含提取到的每条严格链。
+开启后，会对每个矩阵额外打印一行 JSON，包含提取到的严格链；如果同时启用 `--frontier-safe`，也会包含 frontier-safe 链。
 
 如果希望同时落盘到文件，也可以使用：
 
@@ -319,7 +418,7 @@
 每条链包含：
 
 - `head`：链头行号，从 0 开始
-- `head_type`：`absolute_head` 或 `boundary_head`
+- `head_type`：strict 链中为 `absolute_head` 或 `boundary_head`；frontier-safe 链中还可能是 `source` 或 `boundary_cut_head`
 - `head_pred_count`：链头自身前驱数
 - `length`：链长
 - `nodes`：链上节点序列，从链头到链尾
@@ -327,9 +426,9 @@
 示例命令：
 
 ```bash
-python3 scripts/analyze_scan_chains.py datasets/datasets1 --dump-chains
+python3 scripts/analyze_scan_chains.py data/matrices/regression --dump-chains
 ```
 
 ```bash
-python3 scripts/analyze_scan_chains.py datasets/datasets1 --dump-chains --dump-chains-out dump/strict_chain_dump.jsonl
+python3 scripts/analyze_scan_chains.py data/matrices/regression --dump-chains --dump-chains-out results/regression/strict_chain_dump.jsonl
 ```
