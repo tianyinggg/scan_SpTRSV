@@ -1,0 +1,114 @@
+Formal 14 frontier-region CPU executor study summary
+
+Scope:
+- CPU study only. No dropping, no new matrices, no factor regeneration, no GPU kernel.
+- Uses effective frontier-safe bounded-width regions with region_len >= 8.
+- Compares baseline sequential SpTRSV, region sequential replay, affine-state executor, and scan-style prefix-compose simulation.
+
+Cost model notes:
+- baseline_est_ops uses strict-lower edge touches plus one solve step per row.
+- external_reduction_est_ops counts covered-row external dependencies.
+- affine_transition_est_ops counts sparse small-state row-output arithmetic only.
+- scan_compose_est_ops uses a conservative upsweep+downsweep estimate: 2*(L-1)*compose_cost(w) per region.
+- estimated_parallel_depth uses a row-order baseline depth n, replacing each region length L by ceil(log2(L)) + 1.
+- estimated_profit_score = covered_row_ratio * estimated_depth_reduction - max(estimated_work_over_baseline - 1, 0).
+
+Decision thresholds for support rows:
+- correctness_pass = true
+- covered_row_ratio >= 0.10
+- estimated_depth_reduction >= 0.20
+- estimated_work_over_baseline <= 2.0
+- estimated_profit_score > 0
+
+rows: 42
+ok_rows: 42
+correctness_pass_rows: 42
+support_rows: 0
+marginal_rows: 8
+best_support_matrices: 0
+best_support_spd_matrices: 0
+best_support_cfd_matrices: 0
+
+Width aggregates:
+- w=2: matrices=14, support=0, marginal=3, mean_coverage=0.106221, median_coverage=0.046559, mean_work_over_baseline=1.1148, mean_depth_reduction=0.0762049, mean_profit=-0.0879018
+- w=4: matrices=14, support=0, marginal=5, mean_coverage=0.223921, median_coverage=0.171428, mean_work_over_baseline=2.40557, mean_depth_reduction=0.149375, mean_profit=-1.33565
+- w=8: matrices=14, support=0, marginal=0, mean_coverage=0.999553, median_coverage=0.99988, mean_work_over_baseline=38.6013, mean_depth_reduction=0.555447, mean_profit=-37.0461
+
+Best width per matrix:
+- apache1 [SPD]: best_w=2, verdict=marginal, coverage=0.542438, ge16=0.516324, depth_reduction=0.486027, work_over_baseline=1.78362, profit=-0.519981
+- bcsstk10 [SPD]: best_w=2, verdict=not-support, coverage=0, ge16=0, depth_reduction=0, work_over_baseline=1, profit=0
+- bcsstk13 [SPD]: best_w=2, verdict=not-support, coverage=0.00449326, ge16=0, depth_reduction=0.001997, work_over_baseline=1.00132, profit=-0.0013136
+- bcsstk15 [SPD]: best_w=2, verdict=not-support, coverage=0.00227964, ge16=0, depth_reduction=0.00101317, work_over_baseline=1.00077, profit=-0.000767099
+- bcsstk16 [SPD]: best_w=2, verdict=not-support, coverage=0.003276, ge16=0, depth_reduction=0.001638, work_over_baseline=1.00114, profit=-0.0011334
+- bcsstk17 [SPD]: best_w=2, verdict=not-support, coverage=0.0995079, ge16=0.00391835, depth_reduction=0.0518498, work_over_baseline=1.03923, profit=-0.0340688
+- bcsstk18 [SPD]: best_w=2, verdict=marginal, coverage=0.339471, ge16=0.109558, depth_reduction=0.20539, work_over_baseline=1.24752, profit=-0.177792
+- cfd1 [CFD]: best_w=2, verdict=not-support, coverage=0.0373217, ge16=0.0185688, depth_reduction=0.0242301, work_over_baseline=1.01343, profit=-0.0125258
+- cfd2 [CFD]: best_w=2, verdict=not-support, coverage=0.0372003, ge16=0.016024, depth_reduction=0.0234122, work_over_baseline=1.01371, profit=-0.0128355
+- ex11 [CFD]: best_w=2, verdict=not-support, coverage=0.0557963, ge16=0.0312387, depth_reduction=0.0359937, work_over_baseline=1.00775, profit=-0.00573909
+- ex15 [CFD]: best_w=2, verdict=not-support, coverage=0.105141, ge16=0, depth_reduction=0.0620358, work_over_baseline=1.13907, profit=-0.132546
+- ex19 [CFD]: best_w=2, verdict=not-support, coverage=0.0603082, ge16=0.0582257, depth_reduction=0.049646, work_over_baseline=1.09903, profit=-0.0960327
+- raefsky3 [CFD]: best_w=2, verdict=not-support, coverage=0, ge16=0, depth_reduction=0, work_over_baseline=1, profit=0
+- thermal1 [SPD]: best_w=2, verdict=marginal, coverage=0.199857, ge16=0.0687565, depth_reduction=0.123636, work_over_baseline=1.2606, profit=-0.235891
+
+Interpretation by group:
+- SPD: support_matrices=0, marginal_matrices=3, mean_best_coverage=0.148915, mean_best_work=1.16677, mean_best_depth_reduction=0.108944
+- CFD: support_matrices=0, marginal_matrices=0, mean_best_coverage=0.0492945, mean_best_work=1.0455, mean_best_depth_reduction=0.032553
+
+Baseline stability diagnostics:
+- High baseline residual: these rows should be interpreted as executor-to-baseline equivalence only.
+  ex11 [w=2]: baseline_abs=7.55808e+34, baseline_residual=0.419
+  ex11 [w=4]: baseline_abs=7.55808e+34, baseline_residual=0.419
+  ex11 [w=8]: baseline_abs=7.55808e+34, baseline_residual=0.419
+- Large baseline x-error but tiny residual: likely conditioning/scale effects rather than executor mismatch.
+  cfd2 [w=2]: baseline_abs=2073.1, baseline_residual=4.31112e-27
+  cfd2 [w=4]: baseline_abs=2073.1, baseline_residual=4.31112e-27
+  cfd2 [w=8]: baseline_abs=2073.1, baseline_residual=4.31112e-27
+
+Support gating observations:
+- No matrix clears the executor-support bar on its best width; the main blockers are low depth reduction at w=2 and high work inflation at w=4/w=8.
+
+Per-row details:
+- thermal1 [SPD], w=2: verdict=marginal, pass=true, covered=0.199857, ge16=0.0687565, ext_per_row=17.0594, int_per_row=0.482414, work=1.2606, depth_reduction=0.123636, profit=-0.235891, baseline_ms=445.762, affine_ms=504.925, scan_ms=527.686
+- thermal1 [SPD], w=4: verdict=not-support, pass=true, covered=0.544838, ge16=0.167481, ext_per_row=35.9614, int_per_row=1.22923, work=5.69998, depth_reduction=0.331309, profit=-4.51947, baseline_ms=446.67, affine_ms=376.147, scan_ms=446.468
+- thermal1 [SPD], w=8: verdict=not-support, pass=true, covered=1, ge16=0.590994, ext_per_row=30.7629, int_per_row=2.5129, work=64.4403, depth_reduction=0.68944, profit=-62.7508, baseline_ms=447.378, affine_ms=274.122, scan_ms=421.082
+- apache1 [SPD], w=2: verdict=marginal, pass=true, covered=0.542438, ge16=0.516324, ext_per_row=16.4066, int_per_row=1.29517, work=1.78362, depth_reduction=0.486027, profit=-0.519981, baseline_ms=429.856, affine_ms=435.043, scan_ms=503.643
+- apache1 [SPD], w=4: verdict=not-support, pass=true, covered=0.69021, ge16=0.689084, ext_per_row=16.7411, int_per_row=1.64618, work=7.54553, depth_reduction=0.64005, profit=-6.10376, baseline_ms=431.338, affine_ms=413.231, scan_ms=500.648
+- apache1 [SPD], w=8: verdict=not-support, pass=true, covered=1, ge16=0.999666, ext_per_row=29.4855, int_per_row=3.12512, work=69.0624, depth_reduction=0.931114, profit=-67.1313, baseline_ms=428.294, affine_ms=270.755, scan_ms=404.486
+- bcsstk10 [SPD], w=2: verdict=not-support, pass=true, covered=0, ge16=0, ext_per_row=0, int_per_row=0, work=1, depth_reduction=0, profit=0, baseline_ms=3.38454, affine_ms=4.03526, scan_ms=4.05758
+- bcsstk10 [SPD], w=4: verdict=not-support, pass=true, covered=0.0165746, ge16=0.0165746, ext_per_row=0, int_per_row=1.72222, work=1.2634, depth_reduction=0.0110497, profit=-0.263213, baseline_ms=3.3526, affine_ms=4.01261, scan_ms=4.06008
+- bcsstk10 [SPD], w=8: verdict=not-support, pass=true, covered=1, ge16=0.0165746, ext_per_row=16.0331, int_per_row=2.093, work=109.593, depth_reduction=0.502762, profit=-108.09, baseline_ms=3.35108, affine_ms=2.47092, scan_ms=4.23616
+- bcsstk13 [SPD], w=2: verdict=not-support, pass=true, covered=0.00449326, ge16=0, ext_per_row=16.4444, int_per_row=0.444444, work=1.00132, depth_reduction=0.001997, profit=-0.0013136, baseline_ms=44.6146, affine_ms=51.1692, scan_ms=51.1712
+- bcsstk13 [SPD], w=4: verdict=not-support, pass=true, covered=0.017973, ge16=0, ext_per_row=56.3333, int_per_row=1.58333, work=1.0351, depth_reduction=0.00898652, profit=-0.0349377, baseline_ms=44.9005, affine_ms=51.6027, scan_ms=51.7426
+- bcsstk13 [SPD], w=8: verdict=not-support, pass=true, covered=0.997004, ge16=0, ext_per_row=141.576, int_per_row=3.83726, work=15.037, depth_reduction=0.465302, profit=-13.5731, baseline_ms=49.4618, affine_ms=23.4388, scan_ms=26.7936
+- bcsstk15 [SPD], w=2: verdict=not-support, pass=true, covered=0.00227964, ge16=0, ext_per_row=43.6667, int_per_row=0.666667, work=1.00077, depth_reduction=0.00101317, profit=-0.000767099, baseline_ms=77.4493, affine_ms=88.9257, scan_ms=89.4016
+- bcsstk15 [SPD], w=4: verdict=not-support, pass=true, covered=0.056231, ge16=0.00405268, ext_per_row=62.9324, int_per_row=1.5991, work=1.12633, depth_reduction=0.029382, profit=-0.124679, baseline_ms=77.4048, affine_ms=89.4349, scan_ms=89.1637
+- bcsstk15 [SPD], w=8: verdict=not-support, pass=true, covered=0.99848, ge16=0.029382, ext_per_row=123.8, int_per_row=3.71994, work=17.0879, depth_reduction=0.478977, profit=-15.6097, baseline_ms=77.3433, affine_ms=40.6381, scan_ms=48.1393
+- bcsstk16 [SPD], w=2: verdict=not-support, pass=true, covered=0.003276, ge16=0, ext_per_row=5.625, int_per_row=0.625, work=1.00114, depth_reduction=0.001638, profit=-0.0011334, baseline_ms=91.5581, affine_ms=104.352, scan_ms=104.448
+- bcsstk16 [SPD], w=4: verdict=not-support, pass=true, covered=0.0251843, ge16=0, ext_per_row=35.5772, int_per_row=1.23577, work=1.05796, depth_reduction=0.0126945, profit=-0.0576405, baseline_ms=91.6889, affine_ms=105.837, scan_ms=105.818
+- bcsstk16 [SPD], w=8: verdict=not-support, pass=true, covered=0.999386, ge16=0.0190418, ext_per_row=117.717, int_per_row=3.94427, work=17.7631, depth_reduction=0.453931, profit=-16.3095, baseline_ms=91.7997, affine_ms=47.242, scan_ms=56.6432
+- bcsstk17 [SPD], w=2: verdict=not-support, pass=true, covered=0.0995079, ge16=0.00391835, ext_per_row=27.3819, int_per_row=0.591575, work=1.03923, depth_reduction=0.0518498, profit=-0.0340688, baseline_ms=187.403, affine_ms=214.175, scan_ms=213.98
+- bcsstk17 [SPD], w=4: verdict=marginal, pass=true, covered=0.189266, ge16=0.0277018, ext_per_row=39.3751, int_per_row=1.15311, work=1.49418, depth_reduction=0.10534, profit=-0.47424, baseline_ms=187.921, affine_ms=210.395, scan_ms=211.247
+- bcsstk17 [SPD], w=8: verdict=not-support, pass=true, covered=0.999636, ge16=0.19045, ext_per_row=107.002, int_per_row=3.55506, work=19.7681, depth_reduction=0.528978, profit=-18.2393, baseline_ms=187.477, affine_ms=96.3708, scan_ms=115.215
+- bcsstk18 [SPD], w=2: verdict=marginal, pass=true, covered=0.339471, ge16=0.109558, ext_per_row=17.6718, int_per_row=0.424063, work=1.24752, depth_reduction=0.20539, profit=-0.177792, baseline_ms=112.944, affine_ms=124.638, scan_ms=131.135
+- bcsstk18 [SPD], w=4: verdict=not-support, pass=true, covered=0.578842, ge16=0.278038, ext_per_row=30.2406, int_per_row=0.945633, work=3.82932, depth_reduction=0.372782, profit=-2.61354, baseline_ms=113.196, affine_ms=112.676, scan_ms=123.761
+- bcsstk18 [SPD], w=8: verdict=not-support, pass=true, covered=1, ge16=0.56771, ext_per_row=57.8396, int_per_row=2.31579, work=36.4421, depth_reduction=0.675511, profit=-34.7665, baseline_ms=113.042, affine_ms=62.9423, scan_ms=83.099
+- cfd1 [CFD], w=2: verdict=not-support, pass=true, covered=0.0373217, ge16=0.0185688, ext_per_row=25.7334, int_per_row=0.752749, work=1.01343, depth_reduction=0.0242301, profit=-0.0125258, baseline_ms=1366.75, affine_ms=1566.68, scan_ms=1560.3
+- cfd1 [CFD], w=4: verdict=marginal, pass=true, covered=0.244169, ge16=0.0339957, ext_per_row=93.3066, int_per_row=1.73545, work=1.56358, depth_reduction=0.132303, profit=-0.531275, baseline_ms=1363.77, affine_ms=1424.42, scan_ms=1441.82
+- cfd1 [CFD], w=8: verdict=not-support, pass=true, covered=0.999958, ge16=0.132855, ext_per_row=121.574, int_per_row=3.55099, work=17.595, depth_reduction=0.529141, profit=-16.0659, baseline_ms=1366.11, affine_ms=706.779, scan_ms=825.186
+- cfd2 [CFD], w=2: verdict=not-support, pass=true, covered=0.0372003, ge16=0.016024, ext_per_row=61.718, int_per_row=0.710148, work=1.01371, depth_reduction=0.0234122, profit=-0.0128355, baseline_ms=2311.6, affine_ms=2638, scan_ms=2641.58
+- cfd2 [CFD], w=4: verdict=marginal, pass=true, covered=0.268236, ge16=0.0371598, ext_per_row=118.166, int_per_row=1.76715, work=1.63881, depth_reduction=0.144791, profit=-0.599973, baseline_ms=2312.16, affine_ms=2291.3, scan_ms=2342.11
+- cfd2 [CFD], w=8: verdict=not-support, pass=true, covered=0.999951, ge16=0.143948, ext_per_row=117.715, int_per_row=3.55582, work=18.1349, depth_reduction=0.533417, profit=-16.6015, baseline_ms=2316.75, affine_ms=1195.91, scan_ms=1401.51
+- ex11 [CFD], w=2: verdict=not-support, pass=true, covered=0.0557963, ge16=0.0312387, ext_per_row=94.9385, int_per_row=0.880259, work=1.00775, depth_reduction=0.0359937, profit=-0.00573909, baseline_ms=829.327, affine_ms=944.751, scan_ms=944.144
+- ex11 [CFD], w=4: verdict=not-support, pass=true, covered=0.135849, ge16=0.0390634, ext_per_row=236.013, int_per_row=1.49712, work=1.12182, depth_reduction=0.0789094, profit=-0.1111, baseline_ms=830.187, affine_ms=907.933, scan_ms=909.595
+- ex11 [CFD], w=8: verdict=not-support, pass=true, covered=0.999819, ge16=0.0718069, ext_per_row=323.426, int_per_row=3.70821, work=7.30825, depth_reduction=0.482063, profit=-5.82627, baseline_ms=829.109, affine_ms=400.522, scan_ms=425.946
+- ex19 [CFD], w=2: verdict=not-support, pass=true, covered=0.0603082, ge16=0.0582257, ext_per_row=0.589779, int_per_row=0.0925414, work=1.09903, depth_reduction=0.049646, profit=-0.0960327, baseline_ms=54.2794, affine_ms=63.563, scan_ms=64.8081
+- ex19 [CFD], w=4: verdict=marginal, pass=true, covered=0.158351, ge16=0.0690546, ext_per_row=5.46239, int_per_row=1.16412, work=2.6635, depth_reduction=0.102541, profit=-1.64726, baseline_ms=54.3342, affine_ms=63.1077, scan_ms=66.2429
+- ex19 [CFD], w=8: verdict=not-support, pass=true, covered=0.99975, ge16=0.118451, ext_per_row=24.0631, int_per_row=3.38144, work=74.8073, depth_reduction=0.545606, profit=-73.2619, baseline_ms=54.1651, affine_ms=35.0548, scan_ms=55.8801
+- ex15 [CFD], w=2: verdict=not-support, pass=true, covered=0.105141, ge16=0, ext_per_row=4.17729, int_per_row=1.03878, work=1.13907, depth_reduction=0.0620358, profit=-0.132546, baseline_ms=36.822, affine_ms=43.3774, scan_ms=43.9355
+- ex15 [CFD], w=4: verdict=marginal, pass=true, covered=0.184506, ge16=0.0388816, ext_per_row=5.73954, int_per_row=1.68745, work=2.60309, depth_reduction=0.109509, profit=-1.58289, baseline_ms=36.9567, affine_ms=43.4617, scan_ms=45.0256
+- ex15 [CFD], w=8: verdict=not-support, pass=true, covered=0.999854, ge16=0.12378, ext_per_row=29.3187, int_per_row=3.73755, work=62.0679, depth_reduction=0.501529, profit=-60.5665, baseline_ms=36.912, affine_ms=23.3306, scan_ms=35.059
+- raefsky3 [CFD], w=2: verdict=not-support, pass=true, covered=0, ge16=0, ext_per_row=0, int_per_row=0, work=1, depth_reduction=0, profit=0, baseline_ms=647.031, affine_ms=738.138, scan_ms=737.387
+- raefsky3 [CFD], w=4: verdict=not-support, pass=true, covered=0.0246698, ge16=0, ext_per_row=151.306, int_per_row=1.82218, work=1.03538, depth_reduction=0.0116038, profit=-0.0350954, baseline_ms=648.088, affine_ms=737.172, scan_ms=730.992
+- raefsky3 [CFD], w=8: verdict=not-support, pass=true, covered=0.999906, ge16=0.0138208, ext_per_row=194.704, int_per_row=3.91315, work=11.3107, depth_reduction=0.458491, profit=-9.85225, baseline_ms=644.111, affine_ms=320.142, scan_ms=355.994
+
+Final decision: C. Not support scan-region execution; abandon scan direction.
