@@ -1,0 +1,71 @@
+Formal 14 frontier relaxed region summary
+
+Scope:
+- Formal 14 manifest factors only.
+- No dropping, no new downloads, no factor regeneration, no GPU solver.
+- group=ALL, matrices=14, failed=0
+
+Greedy bounded-width definition:
+- Regions are contiguous row-order intervals.
+- External predecessors are considered already resolved by the completed/frontier set.
+- Internal dependency p -> r creates a live interval across boundaries [p, r-1].
+- A bounded-width-w region is accepted only if max live internal rows <= w.
+- Coverage fields are ratios over n_rows; region_count ignores singleton regions.
+- critical_path_coverage is distinct dependency levels touched by length >= 8 regions divided by critical_path_len.
+
+Decision thresholds:
+- Continue only if w <= 4 has at least 4 / 14 matrices with ge8 row coverage >= 0.10.
+- Or w <= 4 has at least 4 / 14 matrices with critical path coverage >= 0.20.
+- Or CFD group has at least 3 / 6 matrices satisfying bw4 ge8 coverage >= 0.10 or bw4 critical path coverage >= 0.20.
+
+Support counts:
+- bw1: ge8>=0.10 matrices=2, critical_path>=0.20 matrices=1
+- bw2: ge8>=0.10 matrices=4, critical_path>=0.20 matrices=2
+- bw4: ge8>=0.10 matrices=9, critical_path>=0.20 matrices=5
+- bw8: ge8>=0.10 matrices=14, critical_path>=0.20 matrices=14
+
+Averages by width:
+- bw1: mean_ge8=0.0519222, median_ge8=0.0161101, mean_ge16=0.0288594, mean_critical=0.0442275, median_critical=0.00585401, max_region_len_max=903
+- bw2: mean_ge8=0.106221, median_ge8=0.046559, mean_ge16=0.0587582, mean_critical=0.137749, median_critical=0.0298154, max_region_len_max=901
+- bw4: mean_ge8=0.223921, median_ge8=0.171428, mean_ge16=0.100078, mean_critical=0.295871, median_critical=0.107698, max_region_len_max=977
+- bw8: mean_ge8=0.999553, median_ge8=0.99988, mean_ge16=0.215606, mean_critical=0.999415, median_critical=0.999692, max_region_len_max=892
+
+Top bw4 ge8 row coverage:
+- apache1 [SPD]: bw4_ge8_row_coverage=0.69021
+- bcsstk18 [SPD]: bw4_ge8_row_coverage=0.578842
+- thermal1 [SPD]: bw4_ge8_row_coverage=0.544838
+- cfd2 [CFD]: bw4_ge8_row_coverage=0.268236
+- cfd1 [CFD]: bw4_ge8_row_coverage=0.244169
+
+Top bw4 critical path coverage:
+- apache1 [SPD]: bw4_critical_path_coverage=1
+- cfd2 [CFD]: bw4_critical_path_coverage=0.871029
+- thermal1 [SPD]: bw4_critical_path_coverage=0.801861
+- cfd1 [CFD]: bw4_critical_path_coverage=0.557845
+- bcsstk18 [SPD]: bw4_critical_path_coverage=0.41624
+
+Strict baseline:
+- mean_strict_ge8=0.00299425, mean_strict_ge16=0.000864157, max_strict_chain_len=101
+
+Per-matrix core metrics:
+- thermal1 [SPD]: multi_pred_ratio=0.784995, critical_path_len=10962, strict_ge8=0, bw2_ge8=0.199857, bw4_ge8=0.544838, bw4_ge16=0.167481, bw4_critical=0.801861, bw8_ge8=1, bw8_critical=1
+- apache1 [SPD]: multi_pred_ratio=0.957599, critical_path_len=4235, strict_ge8=0.0015099, bw2_ge8=0.542438, bw4_ge8=0.69021, bw4_ge16=0.689084, bw4_critical=1, bw8_ge8=1, bw8_critical=1
+- bcsstk10 [SPD]: multi_pred_ratio=0.992634, critical_path_len=654, strict_ge8=0, bw2_ge8=0, bw4_ge8=0.0165746, bw4_ge16=0.0165746, bw4_critical=0.0183486, bw8_ge8=1, bw8_critical=1
+- bcsstk13 [SPD]: multi_pred_ratio=0.987519, critical_path_len=1933, strict_ge8=0, bw2_ge8=0.00449326, bw4_ge8=0.017973, bw4_ge16=0, bw4_critical=0.0134506, bw8_ge8=0.997004, bw8_critical=0.996896
+- bcsstk15 [SPD]: multi_pred_ratio=0.989868, critical_path_len=3625, strict_ge8=0, bw2_ge8=0.00227964, bw4_ge8=0.056231, bw4_ge16=0.00405268, bw4_critical=0.0355862, bw8_ge8=0.99848, bw8_critical=0.998345
+- bcsstk16 [SPD]: multi_pred_ratio=0.984439, critical_path_len=4791, strict_ge8=0, bw2_ge8=0.003276, bw4_ge8=0.0251843, bw4_ge16=0, bw4_critical=0.0162805, bw8_ge8=0.999386, bw8_critical=0.999583
+- bcsstk17 [SPD]: multi_pred_ratio=0.943867, critical_path_len=6612, strict_ge8=0, bw2_ge8=0.0995079, bw4_ge8=0.189266, bw4_ge16=0.0277018, bw4_critical=0.122051, bw8_ge8=0.999636, bw8_critical=0.999395
+- bcsstk18 [SPD]: multi_pred_ratio=0.758621, critical_path_len=4692, strict_ge8=0, bw2_ge8=0.339471, bw4_ge8=0.578842, bw4_ge16=0.278038, bw4_critical=0.41624, bw8_ge8=1, bw8_critical=1
+- cfd1 [CFD]: multi_pred_ratio=0.976237, critical_path_len=7183, strict_ge8=0.00837862, bw2_ge8=0.0373217, bw4_ge8=0.244169, bw4_ge16=0.0339957, bw4_critical=0.557845, bw8_ge8=0.999958, bw8_critical=1
+- cfd2 [CFD]: multi_pred_ratio=0.980484, critical_path_len=5288, strict_ge8=0.00666721, bw2_ge8=0.0372003, bw4_ge8=0.268236, bw4_ge16=0.0371598, bw4_critical=0.871029, bw8_ge8=0.999951, bw8_critical=0.998865
+- ex11 [CFD]: multi_pred_ratio=0.984772, critical_path_len=8099, strict_ge8=0.00439388, bw2_ge8=0.0557963, bw4_ge8=0.135849, bw4_ge16=0.0390634, bw4_critical=0.0933449, bw8_ge8=0.999819, bw8_critical=0.99963
+- ex19 [CFD]: multi_pred_ratio=0.884881, critical_path_len=5754, strict_ge8=0, bw2_ge8=0.0603082, bw4_ge8=0.158351, bw4_ge16=0.0690546, bw4_critical=0.12878, bw8_ge8=0.99975, bw8_critical=0.999479
+- ex15 [CFD]: multi_pred_ratio=0.968691, critical_path_len=4073, strict_ge8=0.0209699, bw2_ge8=0.105141, bw4_ge8=0.184506, bw4_ge16=0.0388816, bw4_critical=0.0360913, bw8_ge8=0.999854, bw8_critical=0.999754
+- raefsky3 [CFD]: multi_pred_ratio=0.99783, critical_path_len=15440, strict_ge8=0, bw2_ge8=0, bw4_ge8=0.0246698, bw4_ge16=0, bw4_critical=0.0312824, bw8_ge8=0.999906, bw8_critical=0.99987
+
+Final decision: B. Narrow support for scan-region direction; next step should be CPU numerical validation, not GPU kernel.
+
+Interpretation:
+- If strict coverage is low and bw2/bw4 coverage is also low, the scan-chain direction lacks useful structure.
+- If only bw8 is strong, the region width is likely too expensive for the original scan-chain premise.
+- High frontier-safe coverage alone is not enough; this experiment asks whether bounded-width relaxed regions are large enough.

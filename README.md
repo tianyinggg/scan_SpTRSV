@@ -321,6 +321,33 @@ results/drop_experiments/long_chain_factor_batch_summary.txt
 figures/drop_experiments/long_chain_factor_batch/
 ```
 
+Formal 14 frontier/relaxed bounded-width region experiment:
+
+正式 14 因子的 frontier/relaxed bounded-width region 结构裁决实验：
+
+```bash
+python3 scripts/run_formal_14_frontier_relaxed_region_experiment.py
+```
+
+This experiment does not drop entries, download matrices, regenerate factors,
+or run a GPU solver. It checks whether existing ILU `L` factors contain enough
+bounded-width scan regions for `w=1,2,4,8`.
+
+该实验不删边、不下载新矩阵、不重新生成因子，也不运行 GPU solver。它只检查已有 ILU `L`
+因子中是否存在足够的 bounded-width scan region，测试 `w=1,2,4,8`。
+
+Formal frontier/relaxed output:
+
+正式 frontier/relaxed 输出：
+
+```text
+results/drop_experiments/formal_14_frontier_relaxed_region.csv
+results/drop_experiments/formal_14_frontier_relaxed_region_summary.txt
+results/drop_experiments/formal_14_frontier_relaxed_region_spd_summary.txt
+results/drop_experiments/formal_14_frontier_relaxed_region_cfd_summary.txt
+figures/drop_experiments/formal_14_frontier_relaxed_region/
+```
+
 The result CSV uses upsert by default: matching matrix/source/path/method/parameter
 rows are updated, while unrelated old rows are kept. Use `--replace-out` to
 rewrite the file from only the current run.
@@ -348,6 +375,10 @@ results/drop_experiments/drop_scan_chain_sweep.csv
 results/drop_experiments/drop_scan_chain_summary.txt
 results/drop_experiments/long_chain_factor_batch.csv
 results/drop_experiments/long_chain_factor_batch_summary.txt
+results/drop_experiments/formal_14_frontier_relaxed_region.csv
+results/drop_experiments/formal_14_frontier_relaxed_region_summary.txt
+results/drop_experiments/formal_14_frontier_relaxed_region_spd_summary.txt
+results/drop_experiments/formal_14_frontier_relaxed_region_cfd_summary.txt
 results/definitions/strict_fields.csv
 results/definitions/frontier_safe_fields.csv
 results/definitions/drop_experiment_fields.csv
@@ -364,6 +395,10 @@ results/factor_preparation/suitesparse_spd_structural_thermal_manifest.csv
 - `results/drop_experiments/drop_scan_chain_summary.txt`：删元素扫描实验自动总结。
 - `results/drop_experiments/long_chain_factor_batch.csv`：长链导向删元素批量实验总表。
 - `results/drop_experiments/long_chain_factor_batch_summary.txt`：长链导向实验最终判断摘要。
+- `results/drop_experiments/formal_14_frontier_relaxed_region.csv`：正式 14 因子的 bounded-width relaxed region 结构裁决总表。
+- `results/drop_experiments/formal_14_frontier_relaxed_region_summary.txt`：正式 14 因子的 frontier/relaxed region 总裁决。
+- `results/drop_experiments/formal_14_frontier_relaxed_region_spd_summary.txt`：SPD / 结构 / 热问题组裁决。
+- `results/drop_experiments/formal_14_frontier_relaxed_region_cfd_summary.txt`：CFD / 非对称 PDE 组裁决。
 - `results/definitions/strict_fields.csv`：strict 字段定义。
 - `results/definitions/frontier_safe_fields.csv`：frontier-safe 追加字段定义。
 - `results/definitions/drop_experiment_fields.csv`：删元素实验字段定义。
