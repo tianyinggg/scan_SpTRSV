@@ -85,6 +85,40 @@ total ignored .mtx data          about 14 GB
 
 ### 真实矩阵输入
 
+Formal 14 dataset names:
+
+正式 14 个数据集名称：
+
+```text
+thermal1
+apache1
+bcsstk10
+bcsstk13
+bcsstk15
+bcsstk16
+bcsstk17
+bcsstk18
+cfd1
+cfd2
+ex11
+ex19
+ex15
+raefsky3
+```
+
+Additional local matrix names:
+
+额外本地矩阵名称：
+
+```text
+FullChip
+kkt_power
+mawi_201512020030
+nlpkkt200
+tmt_sym
+vas_stokes_4M
+```
+
 These directories contain local `.mtx` files that are ignored by Git:
 
 以下目录包含本地 `.mtx` 文件，不进入 Git：
@@ -115,6 +149,28 @@ data/matrices/real/vas_stokes_4M/
 ### Generated SPCG/ILU Factors
 
 ### 生成的 SPCG/ILU 因子
+
+Generated factor dataset names:
+
+生成因子数据集名称：
+
+```text
+thermal1
+apache1
+bcsstk10
+bcsstk13
+bcsstk15
+bcsstk16
+bcsstk17
+bcsstk18
+cfd1
+cfd2
+ex11
+ex19
+ex15
+raefsky3
+tmt_sym
+```
 
 These directories contain generated local `L/U` factor `.mtx` files that are
 ignored by Git:
