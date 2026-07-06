@@ -1,0 +1,64 @@
+Formal 14 frontier-region CPU validation summary
+
+Scope:
+- CPU numerical validation only.
+- No GPU kernel, no performance optimization, no dropping, no factor regeneration, no downloads.
+- Validates whether bounded-width regions can be represented as small-state affine scan transitions.
+
+Decision conditions:
+- w=4 support matrices need at least 8 / 9 pass.
+- CFD w=4 support matrices need at least 4 / 5 pass.
+- scan_sim max abs error must be <= 1e-9 or within 100x CPU baseline max abs error.
+- frontier-safe coverage retention must be >= 0.90.
+
+rows: 28
+ok_rows: 28
+passed_rows: 28
+w4_support_matrices: 9
+w4_pass_matrices: 9
+cfd_w4_support_matrices: 5
+cfd_w4_pass_matrices: 5
+
+Averages by width:
+- w=2: matrices=14, pass=14, mean_coverage=0.106221, median_coverage=0.046559, max_scan_abs=2.66253e+19, max_seq_abs=2.66253e+19, max_affine_abs=2.66253e+19
+- w=4: matrices=14, pass=14, mean_coverage=0.223921, median_coverage=0.171428, max_scan_abs=2.66253e+19, max_seq_abs=2.66253e+19, max_affine_abs=2.66253e+19
+
+Baseline stability diagnostics:
+- High baseline residual: sequential SpTRSV itself does not recover `x_true` cleanly on these matrices, so validation there should be interpreted as equivalence-to-baseline, not proof of a well-conditioned solve.
+  ex11 [w=2]: baseline_abs=7.55808e+34, baseline_rel_residual=0.419
+  ex11 [w=4]: baseline_abs=7.55808e+34, baseline_rel_residual=0.419
+- Large baseline x-error but tiny residual: these matrices appear numerically ill-conditioned for the random right-hand side, even though the triangular solve remains algebraically consistent.
+  cfd2 [w=2]: baseline_abs=2073.1, baseline_rel_residual=4.31112e-27
+  cfd2 [w=4]: baseline_abs=2073.1, baseline_rel_residual=4.31112e-27
+
+Per-matrix validation rows:
+- thermal1 [SPD], w=2: verdict=pass, regions=1304, validated=1304, failed=0, covered=0.199857, structural_ge8=0.199857, retention=1, seq=3.9968e-15, affine=3.9968e-15, scan=3.9968e-15, unresolved=0
+- thermal1 [SPD], w=4: verdict=pass, regions=3596, validated=3596, failed=0, covered=0.544838, structural_ge8=0.544838, retention=1, seq=8.88178e-15, affine=8.88178e-15, scan=8.88178e-15, unresolved=0
+- apache1 [SPD], w=2: verdict=pass, regions=676, validated=676, failed=0, covered=0.542438, structural_ge8=0.542438, retention=1, seq=3.10862e-15, affine=3.10862e-15, scan=3.10862e-15, unresolved=0
+- apache1 [SPD], w=4: verdict=pass, regions=506, validated=506, failed=0, covered=0.69021, structural_ge8=0.69021, retention=1, seq=3.10862e-15, affine=3.10862e-15, scan=3.10862e-15, unresolved=0
+- bcsstk10 [SPD], w=2: verdict=pass, regions=0, validated=0, failed=0, covered=0, structural_ge8=0, retention=1, seq=0, affine=0, scan=0, unresolved=0
+- bcsstk10 [SPD], w=4: verdict=pass, regions=1, validated=1, failed=0, covered=0.0165746, structural_ge8=0.0165746, retention=1, seq=0, affine=0, scan=0, unresolved=0
+- bcsstk13 [SPD], w=2: verdict=pass, regions=1, validated=1, failed=0, covered=0.00449326, structural_ge8=0.00449326, retention=1, seq=4.44089e-16, affine=4.44089e-16, scan=4.44089e-16, unresolved=0
+- bcsstk13 [SPD], w=4: verdict=pass, regions=4, validated=4, failed=0, covered=0.017973, structural_ge8=0.017973, retention=1, seq=3.33067e-15, affine=3.33067e-15, scan=3.33067e-15, unresolved=0
+- bcsstk15 [SPD], w=2: verdict=pass, regions=1, validated=1, failed=0, covered=0.00227964, structural_ge8=0.00227964, retention=1, seq=2.22045e-15, affine=2.22045e-15, scan=2.22045e-15, unresolved=0
+- bcsstk15 [SPD], w=4: verdict=pass, regions=23, validated=23, failed=0, covered=0.056231, structural_ge8=0.056231, retention=1, seq=4.08562e-14, affine=4.08562e-14, scan=4.08562e-14, unresolved=0
+- bcsstk16 [SPD], w=2: verdict=pass, regions=2, validated=2, failed=0, covered=0.003276, structural_ge8=0.003276, retention=1, seq=4.44089e-16, affine=4.44089e-16, scan=4.44089e-16, unresolved=0
+- bcsstk16 [SPD], w=4: verdict=pass, regions=15, validated=15, failed=0, covered=0.0251843, structural_ge8=0.0251843, retention=1, seq=1.11022e-15, affine=1.11022e-15, scan=1.11022e-15, unresolved=0
+- bcsstk17 [SPD], w=2: verdict=pass, regions=105, validated=105, failed=0, covered=0.0995079, structural_ge8=0.0995079, retention=1, seq=4.44089e-15, affine=4.44089e-15, scan=4.44089e-15, unresolved=0
+- bcsstk17 [SPD], w=4: verdict=pass, regions=194, validated=194, failed=0, covered=0.189266, structural_ge8=0.189266, retention=1, seq=8.88178e-15, affine=8.88178e-15, scan=8.88178e-15, unresolved=0
+- bcsstk18 [SPD], w=2: verdict=pass, regions=324, validated=324, failed=0, covered=0.339471, structural_ge8=0.339471, retention=1, seq=2.17493e-13, affine=2.17493e-13, scan=2.17493e-13, unresolved=0
+- bcsstk18 [SPD], w=4: verdict=pass, regions=476, validated=476, failed=0, covered=0.578842, structural_ge8=0.578842, retention=1, seq=2.17493e-13, affine=2.17493e-13, scan=2.17493e-13, unresolved=0
+- cfd1 [CFD], w=2: verdict=pass, regions=185, validated=185, failed=0, covered=0.0373217, structural_ge8=0.0373217, retention=1, seq=5.77316e-15, affine=5.77316e-15, scan=5.77316e-15, unresolved=0
+- cfd1 [CFD], w=4: verdict=pass, regions=1651, validated=1651, failed=0, covered=0.244169, structural_ge8=0.244169, retention=1, seq=1.06581e-14, affine=1.06581e-14, scan=1.06581e-14, unresolved=0
+- cfd2 [CFD], w=2: verdict=pass, regions=350, validated=350, failed=0, covered=0.0372003, structural_ge8=0.0372003, retention=1, seq=9.30893e-06, affine=9.30893e-06, scan=9.30893e-06, unresolved=0
+- cfd2 [CFD], w=4: verdict=pass, regions=3163, validated=3163, failed=0, covered=0.268236, structural_ge8=0.268236, retention=1, seq=0.00263596, affine=0.00263596, scan=0.00263596, unresolved=0
+- ex11 [CFD], w=2: verdict=pass, regions=64, validated=64, failed=0, covered=0.0557963, structural_ge8=0.0557963, retention=1, seq=2.66253e+19, affine=2.66253e+19, scan=2.66253e+19, unresolved=0
+- ex11 [CFD], w=4: verdict=pass, regions=192, validated=192, failed=0, covered=0.135849, structural_ge8=0.135849, retention=1, seq=2.66253e+19, affine=2.66253e+19, scan=2.66253e+19, unresolved=0
+- ex19 [CFD], w=2: verdict=pass, regions=21, validated=21, failed=0, covered=0.0603082, structural_ge8=0.0603082, retention=1, seq=4.44089e-16, affine=4.44089e-16, scan=4.44089e-16, unresolved=0
+- ex19 [CFD], w=4: verdict=pass, regions=133, validated=133, failed=0, covered=0.158351, structural_ge8=0.158351, retention=1, seq=1.77636e-15, affine=1.77636e-15, scan=1.77636e-15, unresolved=0
+- ex15 [CFD], w=2: verdict=pass, regions=60, validated=60, failed=0, covered=0.105141, structural_ge8=0.105141, retention=1, seq=8.88178e-16, affine=8.88178e-16, scan=8.88178e-16, unresolved=0
+- ex15 [CFD], w=4: verdict=pass, regions=102, validated=102, failed=0, covered=0.184506, structural_ge8=0.184506, retention=1, seq=1.77636e-15, affine=1.77636e-15, scan=1.77636e-15, unresolved=0
+- raefsky3 [CFD], w=2: verdict=pass, regions=0, validated=0, failed=0, covered=0, structural_ge8=0, retention=1, seq=0, affine=0, scan=0, unresolved=0
+- raefsky3 [CFD], w=4: verdict=pass, regions=58, validated=58, failed=0, covered=0.0246698, structural_ge8=0.0246698, retention=1, seq=8.65974e-15, affine=8.65974e-15, scan=8.65974e-15, unresolved=0
+
+Final decision: B. CPU validation supports bounded-width scan-region equivalence; next step should be CPU executor/numerical convergence study, not GPU kernel.

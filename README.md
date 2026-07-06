@@ -350,6 +350,52 @@ results/drop_experiments/formal_14_frontier_relaxed_region_cfd_summary.txt
 figures/drop_experiments/formal_14_frontier_relaxed_region/
 ```
 
+Formal CPU validation for frontier-safe bounded-width regions:
+
+正式 14 因子的 frontier-safe / bounded-width region CPU 数值验证：
+
+```bash
+python3 scripts/run_formal_14_frontier_region_cpu_validation.py
+```
+
+This step does not build a GPU executor. It only checks whether the `w=2/4`
+bounded-width regions found by the structural experiment can be replayed
+exactly as:
+
+这一步不写 GPU executor。它只验证结构实验找到的 `w=2/4` bounded-width region
+是否真的可以精确转成下面三种等价形式：
+
+- region-local sequential replay
+- small-state affine transition replay
+- prefix-composed scan simulation
+
+CPU validation output:
+
+CPU 验证输出：
+
+```text
+results/drop_experiments/formal_14_frontier_region_cpu_validation.csv
+results/drop_experiments/formal_14_frontier_region_cpu_validation_summary.txt
+```
+
+Method note:
+
+方法说明：
+
+```text
+docs/FRONTIER_REGION_CPU_VALIDATION.md
+```
+
+Current CPU validation status:
+
+当前 CPU 验证结论：
+
+```text
+w=4 support matrices: 9 / 9 passed
+CFD w=4 support matrices: 5 / 5 passed
+Final decision: bounded-width scan-region direction remains viable on CPU validation
+```
+
 The result CSV uses upsert by default: matching matrix/source/path/method/parameter
 rows are updated, while unrelated old rows are kept. Use `--replace-out` to
 rewrite the file from only the current run.
@@ -381,6 +427,8 @@ results/drop_experiments/formal_14_frontier_relaxed_region.csv
 results/drop_experiments/formal_14_frontier_relaxed_region_summary.txt
 results/drop_experiments/formal_14_frontier_relaxed_region_spd_summary.txt
 results/drop_experiments/formal_14_frontier_relaxed_region_cfd_summary.txt
+results/drop_experiments/formal_14_frontier_region_cpu_validation.csv
+results/drop_experiments/formal_14_frontier_region_cpu_validation_summary.txt
 results/definitions/strict_fields.csv
 results/definitions/frontier_safe_fields.csv
 results/definitions/drop_experiment_fields.csv
@@ -401,6 +449,8 @@ results/factor_preparation/suitesparse_spd_structural_thermal_manifest.csv
 - `results/drop_experiments/formal_14_frontier_relaxed_region_summary.txt`：正式 14 因子的 frontier/relaxed region 总裁决。
 - `results/drop_experiments/formal_14_frontier_relaxed_region_spd_summary.txt`：SPD / 结构 / 热问题组裁决。
 - `results/drop_experiments/formal_14_frontier_relaxed_region_cfd_summary.txt`：CFD / 非对称 PDE 组裁决。
+- `results/drop_experiments/formal_14_frontier_region_cpu_validation.csv`：正式 14 因子的 frontier-safe / bounded-width region CPU 数值验证总表。
+- `results/drop_experiments/formal_14_frontier_region_cpu_validation_summary.txt`：CPU 数值验证裁决摘要，说明结构 region 是否能等价转成小状态 affine scan。
 - `results/definitions/strict_fields.csv`：strict 字段定义。
 - `results/definitions/frontier_safe_fields.csv`：frontier-safe 追加字段定义。
 - `results/definitions/drop_experiment_fields.csv`：删元素实验字段定义。
