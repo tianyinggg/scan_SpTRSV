@@ -217,6 +217,124 @@ results/regression/strict_small_latest.csv
 results/regression/frontier_safe_small_latest.csv
 ```
 
+## Drop-Element Experiments
+
+## 删元素扫描实验
+
+### Preparing SuiteSparse L Factors
+
+### 准备 SuiteSparse 真实 L 因子
+
+To expand beyond the single existing `tmt_sym` factor, use the SuiteSparse
+preparation entry point. It downloads a curated SPD / structural / thermal set
+and generates SPCG-style SuperLU `L/U` factors.
+
+为了把实验对象从单个 `tmt_sym` 扩展到 10-20 个真实因子，可以使用 SuiteSparse 准备脚本。它会下载筛选好的 SPD / 结构 / 热问题矩阵，并生成 SPCG 风格 SuperLU `L/U` 因子。
+
+Recommended first batch:
+
+推荐先跑 12 个矩阵：
+
+```bash
+python3 scripts/prepare_suitesparse_factors.py --limit 12
+```
+
+List all curated candidates:
+
+查看全部内置候选：
+
+```bash
+python3 scripts/prepare_suitesparse_factors.py --list
+```
+
+Prepare CFD / nonsymmetric PDE matrices for GMRES/ILU tests:
+
+准备 CFD / 非对称 PDE 矩阵，用于 GMRES/ILU 场景：
+
+```bash
+python3 scripts/prepare_suitesparse_factors.py \
+  --candidate-set cfd \
+  --permc-spec COLAMD
+```
+
+Outputs:
+
+输出位置：
+
+```text
+data/matrices/real/<matrix>/<matrix>.mtx
+data/factors/spcg/<matrix>/spcg_spilu_l_<matrix>_fill10_drop0.0001_sp0.mtx
+data/factors/spcg/<matrix>/spcg_spilu_u_<matrix>_fill10_drop0.0001_sp0.mtx
+results/factor_preparation/suitesparse_spd_structural_thermal_manifest.csv
+results/factor_preparation/suitesparse_cfd_nonsym_pde_manifest.csv
+```
+
+The manifest records download status, factorization status, Matrix Market
+metadata, factor paths, and failure reasons. A failed matrix does not stop the
+rest of the batch.
+
+manifest 会记录下载状态、分解状态、Matrix Market 元数据、因子路径和失败原因。某个矩阵失败不会中断整批任务。
+
+For details:
+
+详细说明见：
+
+```text
+docs/SUITESPARSE_FACTOR_PREPARATION.md
+```
+
+The next-stage static experiment asks whether deleting a small number of
+low-risk entries from real `L` factors can create more useful scan chains. The
+main entry point is:
+
+下一阶段静态实验用于判断：对真实 `L` 因子删除少量低风险元素，是否能制造更多有执行价值的 scan 链。入口是：
+
+```bash
+python3 scripts/run_drop_experiment.py data/factors/spcg \
+  --source factor-l
+```
+
+It supports `no-drop`, `magnitude-drop`, `wavefront-oriented`,
+`scan-chain-aware`, and `long-chain-aware-drop` strategies, with default drop
+ratios `1%`, `2%`, `5%`, and `10%`.
+
+当前支持 `no-drop`、`magnitude-drop`、`wavefront-oriented`、`scan-chain-aware`、`long-chain-aware-drop` 五种策略，默认扫描 `1%`、`2%`、`5%`、`10%` 删除比例。当前主要判断标准不是 strict 总覆盖率，而是长度 `>=8/>=16` 的有效长链覆盖率增量。
+
+Default outputs:
+
+默认输出：
+
+```text
+results/drop_experiments/drop_scan_chain_sweep.csv
+results/drop_experiments/drop_scan_chain_summary.txt
+results/definitions/drop_experiment_fields.csv
+figures/drop_experiments/
+```
+
+Current long-chain batch output:
+
+当前长链导向批量结果：
+
+```text
+results/drop_experiments/long_chain_factor_batch.csv
+results/drop_experiments/long_chain_factor_batch_summary.txt
+figures/drop_experiments/long_chain_factor_batch/
+```
+
+The result CSV uses upsert by default: matching matrix/source/path/method/parameter
+rows are updated, while unrelated old rows are kept. Use `--replace-out` to
+rewrite the file from only the current run.
+
+结果 CSV 默认按“同矩阵、同来源、同路径、同方法、同参数组合”更新已有行，不相关旧行保留。若只想保留本次运行结果，使用 `--replace-out`。
+
+For full method details and commands, see:
+
+完整方法说明和命令见：
+
+```text
+docs/DROP_ELEMENT_SCAN_EXPERIMENT.md
+```
+
 ## Current Result Files
 
 ## 当前主要结果文件
@@ -226,8 +344,14 @@ results/strict/matrix_lower.csv
 results/strict/spcg_factor_l.csv
 results/frontier_safe/matrix_lower.csv
 results/frontier_safe/spcg_factor_l.csv
+results/drop_experiments/drop_scan_chain_sweep.csv
+results/drop_experiments/drop_scan_chain_summary.txt
+results/drop_experiments/long_chain_factor_batch.csv
+results/drop_experiments/long_chain_factor_batch_summary.txt
 results/definitions/strict_fields.csv
 results/definitions/frontier_safe_fields.csv
+results/definitions/drop_experiment_fields.csv
+results/factor_preparation/suitesparse_spd_structural_thermal_manifest.csv
 ```
 
 中文说明：
@@ -236,8 +360,14 @@ results/definitions/frontier_safe_fields.csv
 - `results/strict/spcg_factor_l.csv`：真实 SPCG `L` 因子的 strict 链统计。
 - `results/frontier_safe/matrix_lower.csv`：原矩阵下三角的 strict + frontier-safe 统计。
 - `results/frontier_safe/spcg_factor_l.csv`：真实 SPCG `L` 因子的 strict + frontier-safe 统计。
+- `results/drop_experiments/drop_scan_chain_sweep.csv`：删元素扫描实验总表。
+- `results/drop_experiments/drop_scan_chain_summary.txt`：删元素扫描实验自动总结。
+- `results/drop_experiments/long_chain_factor_batch.csv`：长链导向删元素批量实验总表。
+- `results/drop_experiments/long_chain_factor_batch_summary.txt`：长链导向实验最终判断摘要。
 - `results/definitions/strict_fields.csv`：strict 字段定义。
 - `results/definitions/frontier_safe_fields.csv`：frontier-safe 追加字段定义。
+- `results/definitions/drop_experiment_fields.csv`：删元素实验字段定义。
+- `results/factor_preparation/suitesparse_spd_structural_thermal_manifest.csv`：SuiteSparse 下载和 SPCG `L/U` 因子生成记录。
 
 ## Notes
 

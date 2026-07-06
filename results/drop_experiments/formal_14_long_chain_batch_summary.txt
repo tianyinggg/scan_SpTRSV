@@ -1,0 +1,76 @@
+Formal 14-factor verdict
+
+Scope:
+- Only formal manifest factors are included.
+- matrices=14, ok_rows=1358, failed_rows=0
+- Formal SPD set: thermal1, apache1, bcsstk10, bcsstk13, bcsstk15, bcsstk16, bcsstk17, bcsstk18
+- Formal CFD set: cfd1, cfd2, ex11, ex19, ex15, raefsky3
+
+Decision metric:
+- Primary metrics are effective_chain_coverage_ge_8/16/32_gain and long-chain row/count fields.
+- strict_chain_row_coverage_gain is auxiliary and is not used as direction evidence.
+- chain_gain_per_1pct_drop is effective_long_chain_score_gain_per_drop_percent.
+
+Long-chain-aware-drop verdict counts:
+- effective: 0
+- weak-or-ineffective: 14
+- regressed: 0
+- failed: 0
+
+Best-any-method verdict counts:
+- effective: 0
+- weak-or-ineffective: 14
+- regressed: 0
+
+Required direct answers for all 14 factors:
+- long-chain-aware-drop effective matrices: 0 / 14
+- weak-or-ineffective matrices: 14 / 14
+- regressed matrices: 0 / 14
+- long-chain-aware-drop stable vs magnitude-drop: wins=1, losses=3, ties=10, median_ge8_delta=0, median_ge16_delta=0
+- matrices with obvious >=8 gain under long-chain-aware-drop: 0; best-any-method: 0
+- matrices with obvious >=16 gain under long-chain-aware-drop: 0; best-any-method: 0
+- current next-stage decision: C. 不支持继续：不支持进入 scan-chain executor，应停止 scan 链作为主线。
+
+Method aggregate statistics:
+- long-chain-aware-drop: mean_ge8_gain=1.02605e-05, median_ge8_gain=0, mean_ge16_gain=0, median_ge16_gain=0, mean_ge32_gain=0, median_ge32_gain=0, mean_chain_gain_per_1pct_drop=0.0652276
+- magnitude-drop: mean_ge8_gain=0.00011491, median_ge8_gain=0, mean_ge16_gain=-3.42637e-07, median_ge16_gain=0, mean_ge32_gain=0, median_ge32_gain=0, mean_chain_gain_per_1pct_drop=9.72947e-05
+- no-drop: mean_ge8_gain=0, median_ge8_gain=0, mean_ge16_gain=0, median_ge16_gain=0, mean_ge32_gain=0, median_ge32_gain=0, mean_chain_gain_per_1pct_drop=0
+- scan-chain-aware: mean_ge8_gain=7.60843e-06, median_ge8_gain=0, mean_ge16_gain=0, median_ge16_gain=0, mean_ge32_gain=0, median_ge32_gain=0, mean_chain_gain_per_1pct_drop=0.00269276
+- wavefront-oriented: mean_ge8_gain=3.13691e-05, median_ge8_gain=0, mean_ge16_gain=1.02778e-05, median_ge16_gain=0, mean_ge32_gain=0, median_ge32_gain=0, mean_chain_gain_per_1pct_drop=5.84546e-05
+
+Per-matrix best long-chain-aware-drop rows:
+- apache1 [SPD]: weak-or-ineffective; ratio=0.01, risk=0.01, max_drop_per_row=1, drop_ratio_actual=3.79515e-07, dropped_nnz=1, ge8_gain=0.000111386, ge16_gain=0, ge32_gain=0, rows_ge8_after=131, rows_ge16_after=122, rows_ge32_after=101, count_ge8_after=3, count_ge16_after=2, count_ge32_after=1, chain_gain_per_1pct_drop=2.93496
+- bcsstk10 [SPD]: weak-or-ineffective; ratio=0.01, risk=0.0001, max_drop_per_row=1, drop_ratio_actual=0, dropped_nnz=0, ge8_gain=0, ge16_gain=0, ge32_gain=0, rows_ge8_after=0, rows_ge16_after=0, rows_ge32_after=0, count_ge8_after=0, count_ge16_after=0, count_ge32_after=0, chain_gain_per_1pct_drop=0
+- bcsstk13 [SPD]: weak-or-ineffective; ratio=0.01, risk=0.0001, max_drop_per_row=1, drop_ratio_actual=0, dropped_nnz=0, ge8_gain=0, ge16_gain=0, ge32_gain=0, rows_ge8_after=0, rows_ge16_after=0, rows_ge32_after=0, count_ge8_after=0, count_ge16_after=0, count_ge32_after=0, chain_gain_per_1pct_drop=0
+- bcsstk15 [SPD]: weak-or-ineffective; ratio=0.01, risk=0.0001, max_drop_per_row=1, drop_ratio_actual=0, dropped_nnz=0, ge8_gain=0, ge16_gain=0, ge32_gain=0, rows_ge8_after=0, rows_ge16_after=0, rows_ge32_after=0, count_ge8_after=0, count_ge16_after=0, count_ge32_after=0, chain_gain_per_1pct_drop=0
+- bcsstk16 [SPD]: weak-or-ineffective; ratio=0.01, risk=0.0001, max_drop_per_row=1, drop_ratio_actual=0, dropped_nnz=0, ge8_gain=0, ge16_gain=0, ge32_gain=0, rows_ge8_after=0, rows_ge16_after=0, rows_ge32_after=0, count_ge8_after=0, count_ge16_after=0, count_ge32_after=0, chain_gain_per_1pct_drop=0
+- bcsstk17 [SPD]: weak-or-ineffective; ratio=0.01, risk=0.0001, max_drop_per_row=1, drop_ratio_actual=0, dropped_nnz=0, ge8_gain=0, ge16_gain=0, ge32_gain=0, rows_ge8_after=0, rows_ge16_after=0, rows_ge32_after=0, count_ge8_after=0, count_ge16_after=0, count_ge32_after=0, chain_gain_per_1pct_drop=0
+- bcsstk18 [SPD]: weak-or-ineffective; ratio=0.01, risk=0.0001, max_drop_per_row=1, drop_ratio_actual=0, dropped_nnz=0, ge8_gain=0, ge16_gain=0, ge32_gain=0, rows_ge8_after=0, rows_ge16_after=0, rows_ge32_after=0, count_ge8_after=0, count_ge16_after=0, count_ge32_after=0, chain_gain_per_1pct_drop=0
+- cfd1 [CFD]: weak-or-ineffective; ratio=0.01, risk=0.001, max_drop_per_row=1, drop_ratio_actual=1.13113e-07, dropped_nnz=1, ge8_gain=1.41531e-05, ge16_gain=0, ge32_gain=0, rows_ge8_after=593, rows_ge16_after=335, rows_ge32_after=0, count_ge8_after=41, count_ge16_after=16, count_ge32_after=0, chain_gain_per_1pct_drop=1.25123
+- cfd2 [CFD]: weak-or-ineffective; ratio=0.01, risk=0.0001, max_drop_per_row=1, drop_ratio_actual=0, dropped_nnz=0, ge8_gain=0, ge16_gain=0, ge32_gain=0, rows_ge8_after=823, rows_ge16_after=484, rows_ge32_after=0, count_ge8_after=59, count_ge16_after=24, count_ge32_after=0, chain_gain_per_1pct_drop=0
+- ex11 [CFD]: weak-or-ineffective; ratio=0.01, risk=0.0001, max_drop_per_row=1, drop_ratio_actual=0, dropped_nnz=0, ge8_gain=0, ge16_gain=0, ge32_gain=0, rows_ge8_after=73, rows_ge16_after=32, rows_ge32_after=0, count_ge8_after=5, count_ge16_after=2, count_ge32_after=0, chain_gain_per_1pct_drop=0
+- ex15 [CFD]: weak-or-ineffective; ratio=0.01, risk=0.01, max_drop_per_row=-1, drop_ratio_actual=0.00228617, dropped_nnz=519, ge8_gain=0.000582496, ge16_gain=0, ge32_gain=0, rows_ge8_after=148, rows_ge16_after=0, rows_ge32_after=0, count_ge8_after=12, count_ge16_after=0, count_ge32_after=0, chain_gain_per_1pct_drop=0.00254791
+- ex19 [CFD]: weak-or-ineffective; ratio=0.01, risk=0.0001, max_drop_per_row=1, drop_ratio_actual=0, dropped_nnz=0, ge8_gain=0, ge16_gain=0, ge32_gain=0, rows_ge8_after=0, rows_ge16_after=0, rows_ge32_after=0, count_ge8_after=0, count_ge16_after=0, count_ge32_after=0, chain_gain_per_1pct_drop=0
+- raefsky3 [CFD]: weak-or-ineffective; ratio=0.01, risk=0.0001, max_drop_per_row=1, drop_ratio_actual=0, dropped_nnz=0, ge8_gain=0, ge16_gain=0, ge32_gain=0, rows_ge8_after=0, rows_ge16_after=0, rows_ge32_after=0, count_ge8_after=0, count_ge16_after=0, count_ge32_after=0, chain_gain_per_1pct_drop=0
+- thermal1 [SPD]: weak-or-ineffective; ratio=0.01, risk=0.0001, max_drop_per_row=1, drop_ratio_actual=0, dropped_nnz=0, ge8_gain=0, ge16_gain=0, ge32_gain=0, rows_ge8_after=0, rows_ge16_after=0, rows_ge32_after=0, count_ge8_after=0, count_ge16_after=0, count_ge32_after=0, chain_gain_per_1pct_drop=0
+
+Per-matrix best method rows:
+- apache1 [SPD]: best=long-chain-aware-drop, verdict=weak-or-ineffective, ratio=0.01, risk=0.01, ge8_gain=0.000111386, ge16_gain=0, ge32_gain=0
+- bcsstk10 [SPD]: best=magnitude-drop, verdict=weak-or-ineffective, ratio=0.01, risk=0.0001, ge8_gain=0, ge16_gain=0, ge32_gain=0
+- bcsstk13 [SPD]: best=magnitude-drop, verdict=weak-or-ineffective, ratio=0.01, risk=0.0001, ge8_gain=0, ge16_gain=0, ge32_gain=0
+- bcsstk15 [SPD]: best=magnitude-drop, verdict=weak-or-ineffective, ratio=0.01, risk=0.0001, ge8_gain=0, ge16_gain=0, ge32_gain=0
+- bcsstk16 [SPD]: best=magnitude-drop, verdict=weak-or-ineffective, ratio=0.01, risk=0.0001, ge8_gain=0, ge16_gain=0, ge32_gain=0
+- bcsstk17 [SPD]: best=magnitude-drop, verdict=weak-or-ineffective, ratio=0.01, risk=0.0001, ge8_gain=0, ge16_gain=0, ge32_gain=0
+- bcsstk18 [SPD]: best=magnitude-drop, verdict=weak-or-ineffective, ratio=0.01, risk=0.0001, ge8_gain=0, ge16_gain=0, ge32_gain=0
+- cfd1 [CFD]: best=magnitude-drop, verdict=weak-or-ineffective, ratio=0.01, risk=0.01, ge8_gain=0.000537817, ge16_gain=0.000240602, ge32_gain=0
+- cfd2 [CFD]: best=magnitude-drop, verdict=weak-or-ineffective, ratio=0.01, risk=0.01, ge8_gain=0.000502268, ge16_gain=0, ge32_gain=0
+- ex11 [CFD]: best=magnitude-drop, verdict=weak-or-ineffective, ratio=0.01, risk=0.0001, ge8_gain=0, ge16_gain=0, ge32_gain=0
+- ex15 [CFD]: best=magnitude-drop, verdict=weak-or-ineffective, ratio=0.01, risk=0.0001, ge8_gain=0.00262123, ge16_gain=0, ge32_gain=0
+- ex19 [CFD]: best=magnitude-drop, verdict=weak-or-ineffective, ratio=0.01, risk=0.0001, ge8_gain=0, ge16_gain=0, ge32_gain=0
+- raefsky3 [CFD]: best=magnitude-drop, verdict=weak-or-ineffective, ratio=0.01, risk=0.0001, ge8_gain=0, ge16_gain=0, ge32_gain=0
+- thermal1 [SPD]: best=magnitude-drop, verdict=weak-or-ineffective, ratio=0.01, risk=0.0001, ge8_gain=0, ge16_gain=0, ge32_gain=0
+
+Decision rule:
+- effective if ge16 coverage gain >= 0.005, or ge8 coverage gain >= 0.01, or ge32 coverage gain >= 0.002.
+- regressed if the best row has negative ge8/ge16/ge32 gain or negative weighted long-chain gain per 1% drop.
+- otherwise weak-or-ineffective.

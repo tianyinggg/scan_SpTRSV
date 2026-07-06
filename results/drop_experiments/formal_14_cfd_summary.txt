@@ -1,0 +1,33 @@
+Formal 14 CFD group summary
+
+matrices: 6
+long-chain-aware effective: 0
+weak-or-ineffective: 6
+regressed: 0
+long-chain-aware vs magnitude-drop: wins=0, losses=3, ties=3, median_ge8_delta=-0.000251134, median_ge16_delta=0
+mean best long-chain-aware ge8 gain: 9.94415e-05
+mean best long-chain-aware ge16 gain: 0
+
+Method aggregate statistics:
+- long-chain-aware-drop: mean_ge8_gain=1.7753e-05, median_ge8_gain=0, mean_ge16_gain=0, median_ge16_gain=0, mean_ge32_gain=0, median_ge32_gain=0, mean_chain_gain_per_1pct_drop=0.0695842
+- magnitude-drop: mean_ge8_gain=0.000268124, median_ge8_gain=0, mean_ge16_gain=-7.99486e-07, median_ge16_gain=0, mean_ge32_gain=0, median_ge32_gain=0, mean_chain_gain_per_1pct_drop=0.000227021
+- no-drop: mean_ge8_gain=0, median_ge8_gain=0, mean_ge16_gain=0, median_ge16_gain=0, mean_ge32_gain=0, median_ge32_gain=0, mean_chain_gain_per_1pct_drop=0
+- scan-chain-aware: mean_ge8_gain=1.7753e-05, median_ge8_gain=0, mean_ge16_gain=0, median_ge16_gain=0, mean_ge32_gain=0, median_ge32_gain=0, mean_chain_gain_per_1pct_drop=0.00628311
+- wavefront-oriented: mean_ge8_gain=7.31945e-05, median_ge8_gain=0, mean_ge16_gain=2.39816e-05, median_ge16_gain=0, mean_ge32_gain=0, median_ge32_gain=0, mean_chain_gain_per_1pct_drop=0.000136394
+
+Per-matrix long-chain-aware best:
+- cfd1: weak-or-ineffective, ge8_gain=1.41531e-05, ge16_gain=0, ge32_gain=0, best_ratio=0.01, best_risk=0.001, chain_gain_per_1pct_drop=1.25123
+- cfd2: weak-or-ineffective, ge8_gain=0, ge16_gain=0, ge32_gain=0, best_ratio=0.01, best_risk=0.0001, chain_gain_per_1pct_drop=0
+- ex11: weak-or-ineffective, ge8_gain=0, ge16_gain=0, ge32_gain=0, best_ratio=0.01, best_risk=0.0001, chain_gain_per_1pct_drop=0
+- ex15: weak-or-ineffective, ge8_gain=0.000582496, ge16_gain=0, ge32_gain=0, best_ratio=0.01, best_risk=0.01, chain_gain_per_1pct_drop=0.00254791
+- ex19: weak-or-ineffective, ge8_gain=0, ge16_gain=0, ge32_gain=0, best_ratio=0.01, best_risk=0.0001, chain_gain_per_1pct_drop=0
+- raefsky3: weak-or-ineffective, ge8_gain=0, ge16_gain=0, ge32_gain=0, best_ratio=0.01, best_risk=0.0001, chain_gain_per_1pct_drop=0
+
+Direct group answers:
+- CFD / nonsymmetric PDE does not show enough stable long-chain improvement by itself.
+- COLAMD ILU L factors in this group are the tested objects; this result cannot be interpreted as a NATURAL-vs-COLAMD comparison.
+- Current CFD evidence is not strong enough to justify narrowing the whole project around GMRES/ILU yet.
+
+Decision rule:
+- effective if ge16 coverage gain >= 0.005, or ge8 coverage gain >= 0.01, or ge32 coverage gain >= 0.002.
+- strict total coverage is auxiliary only.

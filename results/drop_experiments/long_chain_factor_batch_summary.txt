@@ -1,0 +1,50 @@
+Long-chain-oriented drop experiment summary
+
+total_rows: 17
+ok_rows: 17
+failed_rows: 0
+completed_matrices: 1
+
+Method averages focused on effective long chains:
+- long-chain-aware-drop: avg_ge8_coverage_gain=5.50424e-06, avg_ge16_coverage_gain=0, avg_ge32_coverage_gain=0, avg_ge8_gain_per_drop_percent=0.00192244, avg_long_score_gain_per_drop_percent=0.00192244, avg_count_ge16_gain=0, avg_boundary_cut_reduction=23
+- magnitude-drop: avg_ge8_coverage_gain=7.70593e-05, avg_ge16_coverage_gain=1.72007e-05, avg_ge32_coverage_gain=0, avg_ge8_gain_per_drop_percent=4.55685e-05, avg_long_score_gain_per_drop_percent=6.62094e-05, avg_count_ge16_gain=0.5, avg_boundary_cut_reduction=908
+- no-drop: avg_ge8_coverage_gain=0, avg_ge16_coverage_gain=0, avg_ge32_coverage_gain=0, avg_ge8_gain_per_drop_percent=0, avg_long_score_gain_per_drop_percent=0, avg_count_ge16_gain=0, avg_boundary_cut_reduction=0
+- scan-chain-aware: avg_ge8_coverage_gain=5.50424e-06, avg_ge16_coverage_gain=0, avg_ge32_coverage_gain=0, avg_ge8_gain_per_drop_percent=3.30254e-06, avg_long_score_gain_per_drop_percent=3.30254e-06, avg_count_ge16_gain=0, avg_boundary_cut_reduction=7320
+- wavefront-oriented: avg_ge8_coverage_gain=2.75212e-06, avg_ge16_coverage_gain=0, avg_ge32_coverage_gain=0, avg_ge8_gain_per_drop_percent=9.84153e-07, avg_long_score_gain_per_drop_percent=9.84153e-07, avg_count_ge16_gain=0, avg_boundary_cut_reduction=15537.5
+
+Best average method by effective long-chain gain:
+- magnitude-drop: avg_ge8_gain=7.70593e-05, avg_ge16_gain=1.72007e-05, avg_long_score_per_drop_percent=6.62094e-05
+
+Direct method comparison:
+- vs scan-chain-aware: delta_avg_ge8_gain=0, delta_avg_ge16_gain=0, delta_long_score_per_percent=0.00191914
+- vs magnitude-drop: delta_avg_ge8_gain=-7.15551e-05, delta_avg_ge16_gain=-1.72007e-05, delta_long_score_per_percent=0.00185623
+- vs wavefront-oriented: delta_avg_ge8_gain=2.75212e-06, delta_avg_ge16_gain=0, delta_long_score_per_percent=0.00192145
+
+Most stable parameter settings in this batch:
+- method=magnitude-drop, ratio=0.01, risk=0.1, max_drop_per_row=-1: avg_ge8_gain=0.000148614, avg_ge16_gain=3.44015e-05, avg_long_score_per_drop_percent=0.000217417
+- method=magnitude-drop, ratio=0.05, risk=0.1, max_drop_per_row=-1: avg_ge8_gain=0.000148614, avg_ge16_gain=3.44015e-05, avg_long_score_per_drop_percent=4.34835e-05
+- method=long-chain-aware-drop, ratio=0.01, risk=0.1, max_drop_per_row=-1: avg_ge8_gain=1.10085e-05, avg_ge16_gain=0, avg_long_score_per_drop_percent=0.00384488
+- method=long-chain-aware-drop, ratio=0.05, risk=0.1, max_drop_per_row=-1: avg_ge8_gain=1.10085e-05, avg_ge16_gain=0, avg_long_score_per_drop_percent=0.00384488
+- method=scan-chain-aware, ratio=0.01, risk=0.1, max_drop_per_row=-1: avg_ge8_gain=1.10085e-05, avg_ge16_gain=0, avg_long_score_per_drop_percent=1.10085e-05
+
+Per-matrix best rows:
+- spcg_spilu_l_tmt_sym_fill10_dropdefault_sp0: weak-or-ineffective; best=magnitude-drop, ratio=0.01, risk=0.1, ge8_gain=0.000148614, ge16_gain=3.44015e-05, ge32_gain=0, ge8_after=0.000306861, ge16_after=0.000118341, long_score_gain_per_drop_percent=0.000217417
+
+Matrix verdict counts:
+- effective: 0
+- weak-or-ineffective: 1
+- regressed: 0
+
+Final decision:
+- Current static evidence is weak-or-ineffective for executor work: do not start a GPU scan-chain executor yet.
+- long-chain-aware-drop is not clearly better than scan-chain-aware on the completed batch.
+- long-chain-aware-drop does not beat magnitude-drop on effective >=8/>=16 coverage gain.
+- long-chain-aware-drop is more scan-chain-targeted than wavefront-oriented in at least one long-chain gain metric.
+- The primary decision metric is effective_chain_coverage_ge_8/16_gain; strict total coverage gains are secondary and are not sufficient evidence.
+- Matrices supporting executor follow-up: none
+- Matrices currently not supporting the direction: spcg_spilu_l_tmt_sym_fill10_dropdefault_sp0
+
+Decision rule used here:
+- effective if ge16 coverage gain >= 0.005, or ge8 coverage gain >= 0.01, or ge32 coverage gain >= 0.002.
+- regressed if the best non-baseline row has negative long-chain coverage/score gain.
+- otherwise weak-or-ineffective.

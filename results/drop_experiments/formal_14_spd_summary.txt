@@ -1,0 +1,37 @@
+Formal 14 SPD group summary
+
+matrices: 8
+long-chain-aware effective: 0
+weak-or-ineffective: 8
+regressed: 0
+long-chain-aware vs magnitude-drop: wins=1, losses=0, ties=7, median_ge8_delta=0, median_ge16_delta=0
+mean best long-chain-aware ge8 gain: 1.39233e-05
+mean best long-chain-aware ge16 gain: 0
+
+Method aggregate statistics:
+- long-chain-aware-drop: mean_ge8_gain=4.64109e-06, median_ge8_gain=0, mean_ge16_gain=0, median_ge16_gain=0, mean_ge32_gain=0, median_ge32_gain=0, mean_chain_gain_per_1pct_drop=0.0619602
+- magnitude-drop: mean_ge8_gain=0, median_ge8_gain=0, mean_ge16_gain=0, median_ge16_gain=0, mean_ge32_gain=0, median_ge32_gain=0, mean_chain_gain_per_1pct_drop=0
+- no-drop: mean_ge8_gain=0, median_ge8_gain=0, mean_ge16_gain=0, median_ge16_gain=0, mean_ge32_gain=0, median_ge32_gain=0, mean_chain_gain_per_1pct_drop=0
+- scan-chain-aware: mean_ge8_gain=0, median_ge8_gain=0, mean_ge16_gain=0, median_ge16_gain=0, mean_ge32_gain=0, median_ge32_gain=0, mean_chain_gain_per_1pct_drop=0
+- wavefront-oriented: mean_ge8_gain=0, median_ge8_gain=0, mean_ge16_gain=0, median_ge16_gain=0, mean_ge32_gain=0, median_ge32_gain=0, mean_chain_gain_per_1pct_drop=0
+
+Per-matrix long-chain-aware best:
+- apache1: weak-or-ineffective, ge8_gain=0.000111386, ge16_gain=0, ge32_gain=0, best_ratio=0.01, best_risk=0.01, chain_gain_per_1pct_drop=2.93496
+- bcsstk10: weak-or-ineffective, ge8_gain=0, ge16_gain=0, ge32_gain=0, best_ratio=0.01, best_risk=0.0001, chain_gain_per_1pct_drop=0
+- bcsstk13: weak-or-ineffective, ge8_gain=0, ge16_gain=0, ge32_gain=0, best_ratio=0.01, best_risk=0.0001, chain_gain_per_1pct_drop=0
+- bcsstk15: weak-or-ineffective, ge8_gain=0, ge16_gain=0, ge32_gain=0, best_ratio=0.01, best_risk=0.0001, chain_gain_per_1pct_drop=0
+- bcsstk16: weak-or-ineffective, ge8_gain=0, ge16_gain=0, ge32_gain=0, best_ratio=0.01, best_risk=0.0001, chain_gain_per_1pct_drop=0
+- bcsstk17: weak-or-ineffective, ge8_gain=0, ge16_gain=0, ge32_gain=0, best_ratio=0.01, best_risk=0.0001, chain_gain_per_1pct_drop=0
+- bcsstk18: weak-or-ineffective, ge8_gain=0, ge16_gain=0, ge32_gain=0, best_ratio=0.01, best_risk=0.0001, chain_gain_per_1pct_drop=0
+- thermal1: weak-or-ineffective, ge8_gain=0, ge16_gain=0, ge32_gain=0, best_ratio=0.01, best_risk=0.0001, chain_gain_per_1pct_drop=0
+
+Direct group answers:
+- SPD / structural / thermal is not broadly suitable for manufacturing useful long scan chains under the tested deletion rules.
+- bcsstk structural stiffness matrices: effective=0, weak=6, regressed=0.
+- bcsstk class is broadly ineffective in this batch.
+- thermal1/apache1 mean ge8 gain=5.56931e-05; bcsstk mean ge8 gain=0.
+- thermal1/apache1 differ from bcsstk by showing stronger >=8 long-chain gain.
+
+Decision rule:
+- effective if ge16 coverage gain >= 0.005, or ge8 coverage gain >= 0.01, or ge32 coverage gain >= 0.002.
+- strict total coverage is auxiliary only.

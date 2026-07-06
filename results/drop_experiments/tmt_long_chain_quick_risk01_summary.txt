@@ -1,0 +1,35 @@
+Long-chain-oriented drop experiment summary
+
+total_rows: 2
+ok_rows: 2
+failed_rows: 0
+completed_matrices: 1
+
+Method averages focused on effective long chains:
+- long-chain-aware-drop: avg_ge8_coverage_gain=0, avg_ge16_coverage_gain=0, avg_ge32_coverage_gain=0, avg_ge8_gain_per_drop_percent=0, avg_long_score_gain_per_drop_percent=0, avg_count_ge16_gain=0, avg_boundary_cut_reduction=0
+- no-drop: avg_ge8_coverage_gain=0, avg_ge16_coverage_gain=0, avg_ge32_coverage_gain=0, avg_ge8_gain_per_drop_percent=0, avg_long_score_gain_per_drop_percent=0, avg_count_ge16_gain=0, avg_boundary_cut_reduction=0
+
+Direct method comparison:
+- vs scan-chain-aware: baseline has no completed rows.
+- vs magnitude-drop: baseline has no completed rows.
+- vs wavefront-oriented: baseline has no completed rows.
+
+Per-matrix best rows:
+- spcg_spilu_l_tmt_sym_fill10_dropdefault_sp0: weak-or-ineffective; best=long-chain-aware-drop, ratio=0.01, risk=0.1, ge8_gain=0, ge16_gain=0, ge32_gain=0, ge8_after=0.000158247, ge16_after=8.39396e-05, long_score_gain_per_drop_percent=0
+
+Matrix verdict counts:
+- effective: 0
+- weak-or-ineffective: 1
+- regressed: 0
+
+Final decision:
+- Current static evidence is weak-or-ineffective for executor work: do not start a GPU scan-chain executor yet.
+- long-chain-aware-drop could not be compared with scan-chain-aware.
+- The primary decision metric is effective_chain_coverage_ge_8/16_gain; strict total coverage gains are secondary and are not sufficient evidence.
+- Matrices supporting executor follow-up: none
+- Matrices currently not supporting the direction: spcg_spilu_l_tmt_sym_fill10_dropdefault_sp0
+
+Decision rule used here:
+- effective if ge16 coverage gain >= 0.005, or ge8 coverage gain >= 0.01, or ge32 coverage gain >= 0.002.
+- regressed if the best non-baseline row has negative long-chain coverage/score gain.
+- otherwise weak-or-ineffective.

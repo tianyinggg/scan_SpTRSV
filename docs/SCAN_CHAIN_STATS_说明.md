@@ -86,7 +86,7 @@
 - `pred_count[child] == 1`
 - `pred[child][0] == head`
 
-那么 `head` 就可以作为一条 strict single-predecessor chain 的起点边界。
+那么 `head` 就可以作为一条 strict single-predecessor chain 的候选起点边界。
 
 这意味着：
 
@@ -100,9 +100,12 @@
 
 如果某个 `head` 本身也是上游链的严格延续节点，并且它的父节点对它是唯一严格子节点，那么它不会被记为新的 boundary head，而是并入上游同一条线性链。
 
+如果某个边界点有多个严格子节点，它会被统计为分叉边界，但当前最小实现不会从该点继续拆出多条链；链统计只保留可线性延伸且长度 `>= 2` 的链段。
+
 实现位置：
 
-- `find_strict_boundary_heads`
+- `_is_strict_boundary_head`
+- `analyze_strict_chains_from_arrays`
 
 ## 5. 链提取规则
 

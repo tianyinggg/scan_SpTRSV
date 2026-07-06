@@ -1,0 +1,101 @@
+parameter,chinese_name,calculation_description,meaning,formula
+status,状态,单个矩阵和参数组合是否成功完成；失败时仍写入一行。,ok 表示完成，failed 表示该矩阵失败但批处理继续。,"status ∈ {ok, failed}"
+error,错误信息,失败矩阵记录 Python 异常文本；成功行为空。,用于批处理后定位无法读取、无法因子化或内存不足的输入。,error = str(exception) if failed else ''
+matrix_name,矩阵名,默认来自输入 .mtx 文件名；spcg-ilu-l 来自生成的 L 因子名。,区分不同实验对象。,matrix_name = Path(input).stem 或 generated_factor_name
+source,数据来源,由 --source 指定，可为 factor-l、spcg-ilu-l、matrix-lower。,标记当前统计对象是真实 L 因子、生成 L 因子还是原矩阵下三角。,"source ∈ {factor-l, spcg-ilu-l, matrix-lower}"
+input_path,输入路径,实际被分析的 .mtx 路径；spcg-ilu-l 时为生成后的 L 因子路径。,用于复现实验输入。,input_path = analysis_path
+n_rows,行数,从 Matrix Market 尺寸行读取，要求方阵。,三角系统变量数，也是覆盖率分母。,n_rows = M = N
+drop_method,删元素方法,当前参数组合使用的删边策略。,比较 no-drop、普通删小值、波前导向和 scan-chain-aware 的核心字段。,drop_method ∈ DROP_METHODS
+drop_ratio_target,目标删除比例,命令行 --drop-ratios 给定的目标 strict-lower 非零元删除比例。,控制同等删除预算下的比较。,target = requested_drop_nnz / strict_lower_nnz_before
+drop_ratio_actual,实际删除比例,实际删除的 strict-lower 非零元数除以删除前 strict_lower_nnz。,受 risk threshold、每行删除上限、禁止删空等约束影响，可能小于目标比例。,drop_ratio_actual = dropped_nnz / strict_lower_nnz_before
+risk_threshold,数值风险阈值,只允许删除 abs(a_ij)/max_abs(row_i) 不超过该阈值的边。,控制删边数值风险。,risk = |a_ij| / max_j |a_ij|
+max_drop_per_row,每行最大删除数,每一行最多删除多少个 strict-lower 前驱；-1 表示不限。,避免在单行中过度删边。,row_drop_count[i] <= max_drop_per_row
+keep_row_max_predecessor,保留每行最大幅值前驱,为 1 时不删除该行绝对值最大的 strict-lower 前驱。,降低破坏主数值依赖的风险。,drop edge e forbidden if e = argmax_j |a_ij|
+forbid_empty_rows,禁止删空前驱行,为 1 时不允许把某一行所有 strict-lower 前驱全部删除。,避免把原本有依赖的行变成无依赖行。,pred_count_after[i] >= 1 if pred_count_before[i] >= 1
+dropped_nnz,删除非零元数,被删除的 strict-lower 边数量，不含对角。,衡量稀疏化代价。,dropped_nnz = Σ_e 1[drop_mask[e]]
+dropped_rows,发生删除的行数,至少删除了一个 strict-lower 前驱的行数。,衡量删边分布是否集中。,dropped_rows = Σ_i 1[row_drop_count[i] > 0]
+strict_lower_nnz_before,删除前严格下三角非零元数,流式读取 L 的 j < i 边数量。,删除预算和链统计的边数基线。,"strict_lower_nnz_before = |{(i,j): j < i}|"
+strict_lower_nnz_after,删除后严格下三角非零元数,删除 mask 后剩余的 strict-lower 边数量。,检查实际稀疏化结果。,strict_lower_nnz_after = strict_lower_nnz_before - dropped_nnz
+single_pred_rows_before,删除前单前驱行数,删除前 pred_count[i] == 1 的行数。,strict scan 链可用内部节点的原始规模。,Σ_i 1[pred_count_before[i] == 1]
+single_pred_rows_after,删除后单前驱行数,删除后 pred_count[i] == 1 的行数。,判断删边是否把多前驱行转成可 scan 行。,Σ_i 1[pred_count_after[i] == 1]
+multi_pred_rows_before,删除前多前驱行数,删除前 pred_count[i] > 1 的行数。,strict scan 被阻塞的主要来源。,Σ_i 1[pred_count_before[i] > 1]
+multi_pred_rows_after,删除后多前驱行数,删除后 pred_count[i] > 1 的行数。,判断阻塞行是否减少。,Σ_i 1[pred_count_after[i] > 1]
+multi_pred_to_single_pred_rows,多前驱转单前驱行数,删除前 pred_count > 1 且删除后 pred_count == 1 的行数。,scan-chain-aware 方法最直接想增加的行集合。,Σ_i 1[pred_before[i] > 1 and pred_after[i] == 1]
+strict_chain_count_before,删除前严格链条数,删除前按 strict single-predecessor 规则得到的长度 >= 2 链数。,天然 strict scan 链数量。,|{chain_before: len >= 2}|
+strict_chain_count_after,删除后严格链条数,删除后按 strict single-predecessor 规则得到的长度 >= 2 链数。,删元素后可执行 strict scan 链数量。,|{chain_after: len >= 2}|
+strict_chain_row_coverage_before,删除前严格链覆盖行数,删除前所有长度 >= 2 strict 链的链长之和。,天然 strict scan 链覆盖规模。,"Σ len(chain_before), len >= 2"
+strict_chain_row_coverage_after,删除后严格链覆盖行数,删除后所有长度 >= 2 strict 链的链长之和。,删元素后 strict scan 链覆盖规模。,"Σ len(chain_after), len >= 2"
+strict_chain_row_coverage_gain,严格链覆盖行数增量,删除后覆盖行数减删除前覆盖行数。,直接衡量删边制造 scan 链的收益。,strict_chain_row_coverage_after - strict_chain_row_coverage_before
+strict_chain_row_coverage_gain_ratio,严格链覆盖率增量,严格链覆盖行数增量除以 n_rows。,不同规模矩阵间可比的 strict 覆盖收益。,strict_chain_row_coverage_gain / n_rows
+strict_chain_coverage_gain_per_drop_ratio,单位删除比例严格覆盖收益,严格链覆盖率增量除以实际删除比例。,回答每删除 1% 非零元大约换来多少 strict 覆盖率提升。,strict_chain_row_coverage_gain_ratio / drop_ratio_actual
+strict_chain_coverage_gain_per_drop_percent,每删除1%严格覆盖率收益,严格链覆盖率增量除以实际删除百分比点。,直接回答每删除 1% strict-lower 非零元换来多少 strict 覆盖率提升。,strict_chain_row_coverage_gain_ratio / (100 * drop_ratio_actual)
+frontier_safe_chain_row_coverage_before,删除前 frontier-safe 链覆盖行数,删除前按唯一最深前驱加边界切链规则得到的链覆盖。,比 strict 更宽松的可 scan 基线。,"Σ len(frontier_chain_before), len >= 2"
+frontier_safe_chain_row_coverage_after,删除后 frontier-safe 链覆盖行数,删除后按 frontier-safe 规则得到的链覆盖。,判断删边是否改善 frontier-safe 候选链。,"Σ len(frontier_chain_after), len >= 2"
+frontier_safe_chain_row_coverage_gain,frontier-safe 链覆盖行数增量,删除后 frontier-safe 覆盖减删除前覆盖。,衡量更宽松口径下的覆盖收益。,after - before
+frontier_safe_chain_row_coverage_gain_ratio,frontier-safe 链覆盖率增量,frontier-safe 覆盖行数增量除以 n_rows。,不同矩阵间可比的 frontier-safe 覆盖收益。,frontier_safe_chain_row_coverage_gain / n_rows
+frontier_safe_boundary_cut_before,删除前 frontier-safe 切链次数,候选 parent 链中因非主依赖不满足 pred < head 发生的切链次数。,frontier-safe 长链被打断的规模。,# cuts before
+frontier_safe_boundary_cut_after,删除后 frontier-safe 切链次数,删除后重新计算 frontier-safe 边界切链次数。,判断删边是否减少安全边界切链。,# cuts after
+frontier_safe_boundary_cut_reduction,frontier-safe 切链减少量,删除前切链次数减删除后切链次数。,scan-chain-aware 希望减少的 frontier-safe 切链点。,frontier_safe_boundary_cut_before - frontier_safe_boundary_cut_after
+effective_chain_rows_ge_8_before,删除前长度至少8的有效链覆盖行数,删除前所有长度 >= 8 的 strict 链链长之和。,衡量删除前已经有多少具备执行价值的长 strict 链行。,"Σ len(chain_before), len >= 8"
+effective_chain_rows_ge_8_after,删除后长度至少8的有效链覆盖行数,删除后所有长度 >= 8 的 strict 链链长之和。,衡量删边后具备执行价值的长 strict 链行。,"Σ len(chain_after), len >= 8"
+effective_chain_rows_ge_8,长度至少8的有效链覆盖行数,兼容字段，等同于 effective_chain_rows_ge_8_after。,用于直接比较当前参数组合最终产生的有效长链覆盖。,effective_chain_rows_ge_8_after
+effective_chain_rows_ge_8_gain,长度至少8的有效链覆盖行数增量,删除后长度 >= 8 的覆盖行数减删除前对应覆盖行数。,判断删边是否真正制造更长、更值得执行的 scan 链。,effective_chain_rows_ge_8_after - effective_chain_rows_ge_8_before
+effective_chain_rows_ge_8_gain_per_dropped_edge,每删一条边长度至少8覆盖行数收益,长度 >= 8 的有效链覆盖行数增量除以 dropped_nnz。,衡量每条被删除 strict-lower 边换来的有效长链行收益。,effective_chain_rows_ge_8_gain / dropped_nnz
+effective_chain_rows_ge_16_before,删除前长度至少16的有效链覆盖行数,删除前所有长度 >= 16 的 strict 链链长之和。,衡量删除前已经有多少具备执行价值的长 strict 链行。,"Σ len(chain_before), len >= 16"
+effective_chain_rows_ge_16_after,删除后长度至少16的有效链覆盖行数,删除后所有长度 >= 16 的 strict 链链长之和。,衡量删边后具备执行价值的长 strict 链行。,"Σ len(chain_after), len >= 16"
+effective_chain_rows_ge_16,长度至少16的有效链覆盖行数,兼容字段，等同于 effective_chain_rows_ge_16_after。,用于直接比较当前参数组合最终产生的有效长链覆盖。,effective_chain_rows_ge_16_after
+effective_chain_rows_ge_16_gain,长度至少16的有效链覆盖行数增量,删除后长度 >= 16 的覆盖行数减删除前对应覆盖行数。,判断删边是否真正制造更长、更值得执行的 scan 链。,effective_chain_rows_ge_16_after - effective_chain_rows_ge_16_before
+effective_chain_rows_ge_16_gain_per_dropped_edge,每删一条边长度至少16覆盖行数收益,长度 >= 16 的有效链覆盖行数增量除以 dropped_nnz。,衡量每条被删除 strict-lower 边换来的有效长链行收益。,effective_chain_rows_ge_16_gain / dropped_nnz
+effective_chain_rows_ge_32_before,删除前长度至少32的有效链覆盖行数,删除前所有长度 >= 32 的 strict 链链长之和。,衡量删除前已经有多少具备执行价值的长 strict 链行。,"Σ len(chain_before), len >= 32"
+effective_chain_rows_ge_32_after,删除后长度至少32的有效链覆盖行数,删除后所有长度 >= 32 的 strict 链链长之和。,衡量删边后具备执行价值的长 strict 链行。,"Σ len(chain_after), len >= 32"
+effective_chain_rows_ge_32,长度至少32的有效链覆盖行数,兼容字段，等同于 effective_chain_rows_ge_32_after。,用于直接比较当前参数组合最终产生的有效长链覆盖。,effective_chain_rows_ge_32_after
+effective_chain_rows_ge_32_gain,长度至少32的有效链覆盖行数增量,删除后长度 >= 32 的覆盖行数减删除前对应覆盖行数。,判断删边是否真正制造更长、更值得执行的 scan 链。,effective_chain_rows_ge_32_after - effective_chain_rows_ge_32_before
+effective_chain_rows_ge_32_gain_per_dropped_edge,每删一条边长度至少32覆盖行数收益,长度 >= 32 的有效链覆盖行数增量除以 dropped_nnz。,衡量每条被删除 strict-lower 边换来的有效长链行收益。,effective_chain_rows_ge_32_gain / dropped_nnz
+effective_chain_count_ge_8_before,删除前长度至少8的有效链条数,删除前 strict 链中长度 >= 8 的链条数量。,删除前具备执行价值的长链条数。,|{chain_before: len >= 8}|
+effective_chain_count_ge_8_after,删除后长度至少8的有效链条数,删除后 strict 链中长度 >= 8 的链条数量。,删除后具备执行价值的长链条数。,|{chain_after: len >= 8}|
+effective_chain_count_ge_8_gain,长度至少8的有效链条数增量,删除后长度 >= 8 的链条数减删除前对应链条数。,判断删边是否增加有执行价值的长链数量。,effective_chain_count_ge_8_after - effective_chain_count_ge_8_before
+effective_chain_count_ge_16_before,删除前长度至少16的有效链条数,删除前 strict 链中长度 >= 16 的链条数量。,删除前具备执行价值的长链条数。,|{chain_before: len >= 16}|
+effective_chain_count_ge_16_after,删除后长度至少16的有效链条数,删除后 strict 链中长度 >= 16 的链条数量。,删除后具备执行价值的长链条数。,|{chain_after: len >= 16}|
+effective_chain_count_ge_16_gain,长度至少16的有效链条数增量,删除后长度 >= 16 的链条数减删除前对应链条数。,判断删边是否增加有执行价值的长链数量。,effective_chain_count_ge_16_after - effective_chain_count_ge_16_before
+effective_chain_count_ge_32_before,删除前长度至少32的有效链条数,删除前 strict 链中长度 >= 32 的链条数量。,删除前具备执行价值的长链条数。,|{chain_before: len >= 32}|
+effective_chain_count_ge_32_after,删除后长度至少32的有效链条数,删除后 strict 链中长度 >= 32 的链条数量。,删除后具备执行价值的长链条数。,|{chain_after: len >= 32}|
+effective_chain_count_ge_32_gain,长度至少32的有效链条数增量,删除后长度 >= 32 的链条数减删除前对应链条数。,判断删边是否增加有执行价值的长链数量。,effective_chain_count_ge_32_after - effective_chain_count_ge_32_before
+effective_chain_coverage_ge_8_before,删除前长度至少8的有效链覆盖率,删除前长度 >= 8 的有效链覆盖行数除以 n_rows。,不同矩阵间可比的删除前有效长链覆盖率。,effective_chain_rows_ge_8_before / n_rows
+effective_chain_coverage_ge_8_after,删除后长度至少8的有效链覆盖率,删除后长度 >= 8 的有效链覆盖行数除以 n_rows。,不同矩阵间可比的删除后有效长链覆盖率。,effective_chain_rows_ge_8_after / n_rows
+effective_chain_coverage_ge_8,长度至少8的有效链覆盖率,兼容字段，等同于 effective_chain_coverage_ge_8_after。,用于画图和跨方法比较的最终有效长链覆盖率。,effective_chain_coverage_ge_8_after
+effective_chain_coverage_ge_8_gain,长度至少8的有效链覆盖率增量,删除后长度 >= 8 的覆盖率减删除前对应覆盖率。,判断删边是否提升有效长链覆盖率。,effective_chain_coverage_ge_8_after - effective_chain_coverage_ge_8_before
+effective_chain_coverage_ge_8_gain_per_drop_ratio,单位删除比例长度至少8覆盖率收益,长度 >= 8 的覆盖率增量除以实际删除比例。,回答每删除 1% 非零元换来多少有效长链覆盖率提升。,effective_chain_coverage_ge_8_gain / drop_ratio_actual
+effective_chain_coverage_ge_8_gain_per_drop_percent,每删除1%长度至少8覆盖率收益,长度 >= 8 的覆盖率增量除以实际删除百分比点。,直接回答每删除 1% strict-lower 非零元换来多少有效长链覆盖率提升。,effective_chain_coverage_ge_8_gain / (100 * drop_ratio_actual)
+effective_chain_coverage_ge_16_before,删除前长度至少16的有效链覆盖率,删除前长度 >= 16 的有效链覆盖行数除以 n_rows。,不同矩阵间可比的删除前有效长链覆盖率。,effective_chain_rows_ge_16_before / n_rows
+effective_chain_coverage_ge_16_after,删除后长度至少16的有效链覆盖率,删除后长度 >= 16 的有效链覆盖行数除以 n_rows。,不同矩阵间可比的删除后有效长链覆盖率。,effective_chain_rows_ge_16_after / n_rows
+effective_chain_coverage_ge_16,长度至少16的有效链覆盖率,兼容字段，等同于 effective_chain_coverage_ge_16_after。,用于画图和跨方法比较的最终有效长链覆盖率。,effective_chain_coverage_ge_16_after
+effective_chain_coverage_ge_16_gain,长度至少16的有效链覆盖率增量,删除后长度 >= 16 的覆盖率减删除前对应覆盖率。,判断删边是否提升有效长链覆盖率。,effective_chain_coverage_ge_16_after - effective_chain_coverage_ge_16_before
+effective_chain_coverage_ge_16_gain_per_drop_ratio,单位删除比例长度至少16覆盖率收益,长度 >= 16 的覆盖率增量除以实际删除比例。,回答每删除 1% 非零元换来多少有效长链覆盖率提升。,effective_chain_coverage_ge_16_gain / drop_ratio_actual
+effective_chain_coverage_ge_16_gain_per_drop_percent,每删除1%长度至少16覆盖率收益,长度 >= 16 的覆盖率增量除以实际删除百分比点。,直接回答每删除 1% strict-lower 非零元换来多少有效长链覆盖率提升。,effective_chain_coverage_ge_16_gain / (100 * drop_ratio_actual)
+effective_chain_coverage_ge_32_before,删除前长度至少32的有效链覆盖率,删除前长度 >= 32 的有效链覆盖行数除以 n_rows。,不同矩阵间可比的删除前有效长链覆盖率。,effective_chain_rows_ge_32_before / n_rows
+effective_chain_coverage_ge_32_after,删除后长度至少32的有效链覆盖率,删除后长度 >= 32 的有效链覆盖行数除以 n_rows。,不同矩阵间可比的删除后有效长链覆盖率。,effective_chain_rows_ge_32_after / n_rows
+effective_chain_coverage_ge_32,长度至少32的有效链覆盖率,兼容字段，等同于 effective_chain_coverage_ge_32_after。,用于画图和跨方法比较的最终有效长链覆盖率。,effective_chain_coverage_ge_32_after
+effective_chain_coverage_ge_32_gain,长度至少32的有效链覆盖率增量,删除后长度 >= 32 的覆盖率减删除前对应覆盖率。,判断删边是否提升有效长链覆盖率。,effective_chain_coverage_ge_32_after - effective_chain_coverage_ge_32_before
+effective_chain_coverage_ge_32_gain_per_drop_ratio,单位删除比例长度至少32覆盖率收益,长度 >= 32 的覆盖率增量除以实际删除比例。,回答每删除 1% 非零元换来多少有效长链覆盖率提升。,effective_chain_coverage_ge_32_gain / drop_ratio_actual
+effective_chain_coverage_ge_32_gain_per_drop_percent,每删除1%长度至少32覆盖率收益,长度 >= 32 的覆盖率增量除以实际删除百分比点。,直接回答每删除 1% strict-lower 非零元换来多少有效长链覆盖率提升。,effective_chain_coverage_ge_32_gain / (100 * drop_ratio_actual)
+avg_chain_length_before,删除前平均严格链长,删除前 strict 链覆盖行数除以 strict 链条数。,天然 strict 链平均长度。,coverage_before / chain_count_before
+avg_chain_length_after,删除后平均严格链长,删除后 strict 链覆盖行数除以 strict 链条数。,删边后 strict 链平均长度。,coverage_after / chain_count_after
+avg_effective_chain_length_ge_8_before,删除前长度至少8的平均有效链长,删除前长度 >= 8 的有效链覆盖行数除以对应链条数。,删除前长链的平均执行长度。,effective_chain_rows_ge_8_before / effective_chain_count_ge_8_before
+avg_effective_chain_length_ge_8_after,删除后长度至少8的平均有效链长,删除后长度 >= 8 的有效链覆盖行数除以对应链条数。,删除后长链的平均执行长度。,effective_chain_rows_ge_8_after / effective_chain_count_ge_8_after
+avg_effective_chain_length_ge_16_before,删除前长度至少16的平均有效链长,删除前长度 >= 16 的有效链覆盖行数除以对应链条数。,删除前长链的平均执行长度。,effective_chain_rows_ge_16_before / effective_chain_count_ge_16_before
+avg_effective_chain_length_ge_16_after,删除后长度至少16的平均有效链长,删除后长度 >= 16 的有效链覆盖行数除以对应链条数。,删除后长链的平均执行长度。,effective_chain_rows_ge_16_after / effective_chain_count_ge_16_after
+avg_effective_chain_length_ge_32_before,删除前长度至少32的平均有效链长,删除前长度 >= 32 的有效链覆盖行数除以对应链条数。,删除前长链的平均执行长度。,effective_chain_rows_ge_32_before / effective_chain_count_ge_32_before
+avg_effective_chain_length_ge_32_after,删除后长度至少32的平均有效链长,删除后长度 >= 32 的有效链覆盖行数除以对应链条数。,删除后长链的平均执行长度。,effective_chain_rows_ge_32_after / effective_chain_count_ge_32_after
+effective_long_chain_score_before,删除前有效长链加权分数,用长度 >=8、>=16、>=32 的覆盖行数加权求和。,综合衡量删除前可执行长链规模，权重偏向更长链。,score = rows_ge8 + 2 * rows_ge16 + 4 * rows_ge32
+effective_long_chain_score_after,删除后有效长链加权分数,删除后重新计算长度 >=8、>=16、>=32 的覆盖行数加权和。,综合衡量删边后可执行长链规模。,score_after = rows_ge8_after + 2 * rows_ge16_after + 4 * rows_ge32_after
+effective_long_chain_score_gain,有效长链加权分数增量,删除后有效长链加权分数减删除前分数。,用于判断删边是否真正制造更有执行价值的长链。,effective_long_chain_score_after - effective_long_chain_score_before
+effective_long_chain_score_gain_per_drop_percent,每删除1%有效长链分数收益,有效长链加权分数增量先除以 n_rows 得到归一化收益，再除以实际删除百分比点。,回答每删除 1% strict-lower 非零元换来多少综合长链收益。,(effective_long_chain_score_gain / n_rows) / (100 * drop_ratio_actual)
+max_chain_length_before,删除前最长严格链长,删除前所有 strict 链中的最大链长。,天然长链上限。,max len(chain_before)
+max_chain_length_after,删除后最长严格链长,删除后所有 strict 链中的最大链长。,删边后长链上限。,max len(chain_after)
+strict_chain_len_ge_8_before,删除前长度至少8的严格链条数,删除前 strict 链中长度 >= 8 的链条数量。,天然长 strict 链条数。,|{chain_before: len >= 8}|
+strict_chain_len_ge_8_after,删除后长度至少8的严格链条数,删除后 strict 链中长度 >= 8 的链条数量。,删边后长 strict 链条数。,|{chain_after: len >= 8}|
+strict_chain_len_ge_16_before,删除前长度至少16的严格链条数,删除前 strict 链中长度 >= 16 的链条数量。,天然长 strict 链条数。,|{chain_before: len >= 16}|
+strict_chain_len_ge_16_after,删除后长度至少16的严格链条数,删除后 strict 链中长度 >= 16 的链条数量。,删边后长 strict 链条数。,|{chain_after: len >= 16}|
+strict_chain_len_ge_32_before,删除前长度至少32的严格链条数,删除前 strict 链中长度 >= 32 的链条数量。,天然长 strict 链条数。,|{chain_before: len >= 32}|
+strict_chain_len_ge_32_after,删除后长度至少32的严格链条数,删除后 strict 链中长度 >= 32 的链条数量。,删边后长 strict 链条数。,|{chain_after: len >= 32}|
+chain_gain_per_dropped_edge,每删一条边的严格覆盖收益,严格链覆盖行数增量除以 dropped_nnz。,衡量删边效率；负值表示删边破坏了 strict 链覆盖。,strict_chain_row_coverage_gain / dropped_nnz

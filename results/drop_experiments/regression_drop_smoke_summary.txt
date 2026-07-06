@@ -1,0 +1,25 @@
+Drop-element scan-chain experiment summary
+
+total_rows: 20
+ok_rows: 20
+failed_rows: 0
+
+Method averages:
+- magnitude-drop: avg_strict_coverage_gain=0.025, avg_effective_ge8=0.4, avg_gain_per_dropped_edge=0.2, avg_boundary_cut_reduction=0
+- no-drop: avg_strict_coverage_gain=0, avg_effective_ge8=0.4, avg_gain_per_dropped_edge=0, avg_boundary_cut_reduction=0
+- scan-chain-aware: avg_strict_coverage_gain=0.05, avg_effective_ge8=0.4, avg_gain_per_dropped_edge=0.4, avg_boundary_cut_reduction=0
+- wavefront-oriented: avg_strict_coverage_gain=0.025, avg_effective_ge8=0.4, avg_gain_per_dropped_edge=0.2, avg_boundary_cut_reduction=0
+
+Best method judgment:
+- Best average static score: scan-chain-aware
+
+Per-matrix best rows:
+- t01_two_short_chains_4: weak-or-ineffective; best=magnitude-drop, ratio=0.1, risk=1.0, strict_gain_ratio=0, effective_ge8=0, gain_per_edge=0
+- t02_pure_chain_8: weak-or-ineffective; best=magnitude-drop, ratio=0.1, risk=1.0, strict_gain_ratio=0, effective_ge8=1, gain_per_edge=0
+- t03_invalid_same_level_4: weak-or-ineffective; best=magnitude-drop, ratio=0.1, risk=1.0, strict_gain_ratio=0, effective_ge8=0, gain_per_edge=0
+- t04_external_dep_chain_8: effective; best=scan-chain-aware, ratio=0.1, risk=1.0, strict_gain_ratio=0.25, effective_ge8=0, gain_per_edge=2
+- t05_pure_chain_40: weak-or-ineffective; best=magnitude-drop, ratio=0.1, risk=1.0, strict_gain_ratio=0, effective_ge8=1, gain_per_edge=0
+
+Decision rule used here:
+- A matrix is marked effective when strict_chain_row_coverage_gain_ratio >= 0.01.
+- If most matrices are weak-or-ineffective, static evidence is not yet strong enough to justify a scan-chain executor.

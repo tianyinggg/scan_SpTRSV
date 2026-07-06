@@ -1,0 +1,19 @@
+Drop-element scan-chain experiment summary
+
+total_rows: 2
+ok_rows: 2
+failed_rows: 0
+
+Method averages:
+- no-drop: avg_strict_coverage_gain=0, avg_effective_ge8=0.000158247, avg_gain_per_dropped_edge=0, avg_boundary_cut_reduction=0
+- scan-chain-aware: avg_strict_coverage_gain=0.00348556, avg_effective_ge8=0.000158247, avg_gain_per_dropped_edge=0.010331, avg_boundary_cut_reduction=1122
+
+Best method judgment:
+- Best average static score: scan-chain-aware
+
+Per-matrix best rows:
+- spcg_spilu_l_tmt_sym_fill10_dropdefault_sp0: weak-or-ineffective; best=scan-chain-aware, ratio=0.01, risk=0.01, strict_gain_ratio=0.00348556, effective_ge8=0.000158247, gain_per_edge=0.010331
+
+Decision rule used here:
+- A matrix is marked effective when strict_chain_row_coverage_gain_ratio >= 0.01.
+- If most matrices are weak-or-ineffective, static evidence is not yet strong enough to justify a scan-chain executor.
