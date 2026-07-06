@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Formal 14-factor frontier/relaxed bounded-width region experiment."""
+"""Formal 14-factor frontier/relaxed bounded-width region experiment.
+
+Chinese shorthand: "链变块".  The experiment changes the target structure from
+strict single-predecessor scan chains to bounded-width scan regions.
+"""
 
 from __future__ import annotations
 
@@ -488,6 +492,7 @@ def write_summary(summary_path: Path, rows: list[dict], title: str, group: str |
         f"- group={group or 'ALL'}, matrices={len(ok_rows)}, failed={len(failed_rows)}",
         "",
         "Greedy bounded-width definition:",
+        "- Chinese shorthand: 链变块. The target changes from strict linear chains to bounded-width row blocks/regions.",
         "- Regions are contiguous row-order intervals.",
         "- External predecessors are considered already resolved by the completed/frontier set.",
         "- Internal dependency p -> r creates a live interval across boundaries [p, r-1].",

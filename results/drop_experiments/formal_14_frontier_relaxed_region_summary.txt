@@ -6,6 +6,7 @@ Scope:
 - group=ALL, matrices=14, failed=0
 
 Greedy bounded-width definition:
+- Chinese shorthand: 链变块. The target changes from strict linear chains to bounded-width row blocks/regions.
 - Regions are contiguous row-order intervals.
 - External predecessors are considered already resolved by the completed/frontier set.
 - Internal dependency p -> r creates a live interval across boundaries [p, r-1].

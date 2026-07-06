@@ -323,7 +323,7 @@ figures/drop_experiments/long_chain_factor_batch/
 
 Formal 14 frontier/relaxed bounded-width region experiment:
 
-正式 14 因子的 frontier/relaxed bounded-width region 结构裁决实验：
+正式 14 因子的 frontier/relaxed bounded-width region 结构裁决实验，中文简称“链变块”：
 
 ```bash
 python3 scripts/run_formal_14_frontier_relaxed_region_experiment.py
@@ -335,6 +335,8 @@ bounded-width scan regions for `w=1,2,4,8`.
 
 该实验不删边、不下载新矩阵、不重新生成因子，也不运行 GPU solver。它只检查已有 ILU `L`
 因子中是否存在足够的 bounded-width scan region，测试 `w=1,2,4,8`。
+“链变块”的含义是：在 strict 单前驱长链失败后，不再强求一条线性 scan 链，而是把候选执行单元放宽成
+bounded-width scan region，也就是带少量 live internal dependencies 的连续行块。
 
 Formal frontier/relaxed output:
 
