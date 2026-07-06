@@ -378,3 +378,11 @@ directory structure is kept with `.gitkeep` files, while result CSVs are kept in
 `results/`.
 
 大矩阵 `.mtx` 和生成的真实 `L/U` 因子默认不进入 git，避免提交超大文件。目录结构通过 `.gitkeep` 保留，统计结果 CSV 保存在 `results/` 下。
+
+For the exact list of local-only files and data placeholders, see:
+
+本地保留但不上传 GitHub 的文件清单和数据目录占位说明见：
+
+```text
+docs/NOT_UPLOADED_TO_GITHUB.md
+```
